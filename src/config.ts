@@ -1,2 +1,2 @@
 export const RegionID = 'HT';
-export const BaseJson = 'http://dl.padsv.gungho.jp/base.ht-adr.json';
+export const BaseJsonURL = 'http://dl.padsv.gungho.jp/base.ht-adr.json';
