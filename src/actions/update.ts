@@ -15,10 +15,11 @@ export async function main(args: string[]) {
   const extlist = Extlist.load(await downloadExtlist(outPath, baseJson.extlist));
 
   const bcPath = mkdir(outPath, 'bc');
+  const binPath = mkdir(outPath, 'bin');
   const cachePath = mkdir(outPath, 'cache');
 
   const downloadFns = extlist.entries.map((entry) => async () => {
-    await downloadBc(bcPath, cachePath, baseJson.extlist, entry);
+    await downloadBc(bcPath, binPath, cachePath, baseJson.extlist, entry);
   });
 
   let progress = 0;
