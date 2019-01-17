@@ -3,7 +3,8 @@ import { actions } from './actions';
 function usage() {
   console.log(`
 usage: pad-resources update
-       pad-resources extract
+       pad-resources extract <bin files>...
+       pad-resources inspect <file>
 `.trim());
   return false;
 }
