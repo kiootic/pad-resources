@@ -17,10 +17,10 @@ function inspect(buf: Buffer) {
     }
   } else if (ISC.match(buf)) {
     const isc = ISC.load(buf);
-    console.log(isc);
+    console.log(JSON.stringify(isc, undefined, 2));
   } else if (ISA.match(buf)) {
     const isa = ISA.load(buf);
-    console.log(isa);
+    console.log(JSON.stringify(isa, undefined, 2));
   }
 }
 

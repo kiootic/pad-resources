@@ -18,7 +18,7 @@ async function main(args: string[]) {
   }
 }
 
-main(process.argv.slice(2)).then((ok) => process.exit(ok ? 0 : 1)).catch((err) => {
+main(process.argv.slice(2)).then((ok) => process.exitCode = ok ? 0 : 1).catch((err) => {
   console.error('\nunexpected error: ', err);
   process.exit(1);
 });

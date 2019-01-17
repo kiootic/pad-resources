@@ -15,6 +15,7 @@
     "quotemark": [true, "single", "jsx-double", "avoid-escape", "avoid-template"],
     "semicolon": true,
     "variable-name": [true, "check-format", "allow-leading-underscore", "allow-pascal-case"],
-    "no-bitwise": false
+    "no-bitwise": false,
+    "interface-name": false
   }
 }
