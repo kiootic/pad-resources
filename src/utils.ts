@@ -12,3 +12,10 @@ export function mkdir(...parts: string[]) {
     mkdirp(dir);
   return dir;
 }
+
+export function readASCII(buf: Buffer, offset: number) {
+  let str = '';
+  while (buf[offset] !== 0)
+    str += String.fromCharCode(buf[offset++]);
+  return str;
+}
