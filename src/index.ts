@@ -3,6 +3,7 @@ import { actions } from './actions';
 function usage() {
   console.log(`
 usage: pad-resources update
+       pad-resources extract
 `.trim());
   return false;
 }
