@@ -5,6 +5,7 @@ function usage() {
 usage: pad-resources update
        pad-resources extract <bin files>...
        pad-resources inspect <file>
+       pad-resources render <bin file> <out file>
 `.trim());
   return false;
 }
