@@ -96,6 +96,18 @@ export const TEX = {
     }
     return { entries };
   },
+  decodeRaw(entry: TEXEntry): Buffer {
+    const pixBuf = Buffer.alloc(entry.width * entry.height * 4);
+    if (entry.encoding === TEXEncoding.R8G8B8A8) {
+      entry.data.copy(pixBuf);
+    } else {
+      const decodeTable = decodeTables[entry.encoding];
+      const numPix = entry.width * entry.height;
+      for (let i = 0; i < numPix; i++)
+        pixBuf.writeUInt32LE(decodeTable.readUInt32LE(entry.data.readUInt16LE(i * 2) * 4), i * 4);
+    }
+    return pixBuf;
+  },
   async decode(entry: TEXEntry): Promise<Buffer> {
     if (entry.encoding === TEXEncoding.RAW) {
       return entry.data;

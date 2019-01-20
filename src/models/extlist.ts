@@ -10,7 +10,7 @@ export interface ExtlistEntry {
   id: number;
   width: number;
   height: number;
-  frames: number;
+  numFrames: number;
   frameRate: number;
   checksum: number;
   size: number;
@@ -43,7 +43,7 @@ export const Extlist = {
         id,
         width: buf.readUInt16LE(0x10 + i * 24 + 6),
         height: buf.readUInt16LE(0x10 + i * 24 + 8),
-        frames: buf.readUInt16LE(0x10 + i * 24 + 10),
+        numFrames: buf.readUInt16LE(0x10 + i * 24 + 10),
         frameRate: buf.readUInt16LE(0x10 + i * 24 + 12),
         checksum: buf.readUInt16LE(0x10 + i * 24 + 14),
         size: buf.readUInt32LE(0x10 + i * 24 + 16),
