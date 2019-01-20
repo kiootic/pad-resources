@@ -2,6 +2,7 @@ import { readFileSync, writeFileSync } from 'fs';
 import { BBIN } from '../models/bbin';
 import { Extlist } from '../models/extlist';
 import { TEX } from '../models/tex';
+import { AnimatedRenderer } from '../renderer/animated';
 import { Renderer } from '../renderer/renderer';
 import { SimpleRenderer } from '../renderer/simple';
 
@@ -24,8 +25,8 @@ export async function main(args: string[]) {
     renderer = new SimpleRenderer(entry, buf);
     await renderer.draw(0.8);
   } else if (BBIN.match(buf)) {
-    // await renderer.drawBackground();
-    return false;
+    renderer = new AnimatedRenderer(buf);
+    await renderer.draw(0);
   } else {
     console.error('unsupported format');
     return false;

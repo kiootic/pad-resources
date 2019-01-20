@@ -46,7 +46,7 @@ export interface ISCMesh {
   id: number;
   type: ISCMeshType;
   name: string;
-  imageId: number;
+  textureId: number;
   isSpring: boolean;
   triangleList: Array<[number, number, number]>;
   vertices: Array<ISCMeshVertex | ISCSpringVertex>;
@@ -64,8 +64,8 @@ export interface ISCSpringVertexJoint {
 }
 
 export interface ISCSpringVertex {
-  src: ISCSpringVertexJoint[];
-  dst: Vec2;
+  src: Vec2;
+  dst: ISCSpringVertexJoint[];
 }
 
 export enum ISCMeshType {
@@ -162,7 +162,7 @@ export const ISC = {
       if (type !== 0x4853454D)
         throw new Error(`unknown mesh type: ${type}`);
 
-      const imageId = buf.readInt32LE(offsetMeshs + i * 0x30 + 8);
+      const textureId = buf.readInt32LE(offsetMeshs + i * 0x30 + 8);
       const flag = buf.readInt32LE(offsetMeshs + i * 0x30 + 12);
 
       const ptOffset = buf.readInt32LE(offsetMeshs + i * 0x30 + 16);
@@ -177,8 +177,8 @@ export const ISC = {
         if (isSpring) {
           const num = buf.readInt32LE(offset + 8);
           vertex = {
-            dst: { x: buf.readFloatLE(offset + 0), y: buf.readFloatLE(offset + 4) },
-            src: range(num).map((j) => ({
+            src: { x: buf.readFloatLE(offset + 0), y: buf.readFloatLE(offset + 4) },
+            dst: range(num).map((j) => ({
               boneId: buf.readInt32LE(offset + 0x10 + j * 0x10 + 0),
               vertex: {
                 x: buf.readFloatLE(offset + 0x10 + j * 0x10 + 4),
@@ -190,8 +190,8 @@ export const ISC = {
           offset += 0x10 * (num + 1);
         } else {
           vertex = {
-            dst: { x: buf.readFloatLE(offset + 0), y: buf.readFloatLE(offset + 4) },
             src: { x: buf.readFloatLE(offset + 8), y: buf.readFloatLE(offset + 12) },
+            dst: { x: buf.readFloatLE(offset + 0), y: buf.readFloatLE(offset + 4) },
           };
           offset += 0x10;
         }
@@ -202,7 +202,7 @@ export const ISC = {
         id: i,
         type: buf.slice(offsetMeshs + i * 0x30 + 4, offsetMeshs + i * 0x30 + 8).toString() as ISCMeshType,
         name: readASCII(buf, offsetMeshs + i * 0x30 + 0x20),
-        imageId,
+        textureId,
         isSpring,
         triangleList: chunk(
           range(ptSize).map((j) => buf.readInt32LE(ptOffset + j * 4)), 3,

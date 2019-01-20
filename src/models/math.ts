@@ -10,3 +10,13 @@ export interface Transform {
   tx: number;
   ty: number;
 }
+
+export const Transform = {
+  identity(): Transform {
+    return {
+      angle: 0,
+      sx: 1, sy: 1,
+      tx: 1, ty: 1,
+    };
+  },
+};

@@ -109,7 +109,7 @@ export class GLContext {
 
     const textureLocation = this.gl.getUniformLocation(program, 'u_texture');
     this.gl.uniform1i(textureLocation, 0);
-    this.gl.drawArrays(this.gl.TRIANGLES, 0, 6);
+    this.gl.drawArrays(this.gl.TRIANGLES, 0, positions.length / 2);
   }
 
   public async finalize(): Promise<Buffer> {
