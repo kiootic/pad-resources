@@ -160,7 +160,7 @@ function readAnimation(buf: Buffer, offset: number): ISAAnimation | null {
       case ISAFrameKind.Vertex:
         frame = {
           kind: frameKind,
-          vertex: { x: buf.readFloatLE(pos + 8), y: buf.readFloatLE(pos + 8) },
+          vertex: { x: buf.readFloatLE(pos + 8), y: buf.readFloatLE(pos + 12) },
         };
         pos += 0x10;
         break;

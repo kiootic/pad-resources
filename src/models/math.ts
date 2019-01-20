@@ -16,7 +16,7 @@ export const Transform = {
     return {
       angle: 0,
       sx: 1, sy: 1,
-      tx: 1, ty: 1,
+      tx: 0, ty: 0,
     };
   },
 };
