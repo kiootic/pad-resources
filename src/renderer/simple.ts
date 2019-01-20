@@ -7,6 +7,12 @@ export class SimpleRenderer extends Renderer {
   private readonly tex: WebGLTexture;
   private readonly texInfo: TEXEntry;
 
+  public get timeLength(): number {
+    const timePerFrame = (this.entry.frameRate || 1) / 30;
+    const numFrames = this.entry.numFrames || 1;
+    return numFrames * timePerFrame;
+  }
+
   constructor(private readonly entry: ExtlistEntry, buf: Buffer) {
     super();
     const texInfo = TEX.load(buf).entries[0];

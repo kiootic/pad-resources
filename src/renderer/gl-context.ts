@@ -50,6 +50,11 @@ export class GLContext {
     this.gl.enable(this.gl.BLEND);
   }
 
+  public reset() {
+    this.gl.clear(this.gl.COLOR_BUFFER_BIT);
+    mat4.identity(this.transform);
+  }
+
   public setBlendMode(mode: 'normal' | 'additive') {
     switch (mode) {
       case 'normal':
@@ -121,7 +126,7 @@ export class GLContext {
     this.gl.drawArrays(this.gl.TRIANGLES, 0, positions.length / 2);
   }
 
-  public async finalize(): Promise<Buffer> {
+  public async finalize(format: 'png' | 'webp' = 'png'): Promise<Buffer> {
     const pixels = new Buffer(this.width * this.height * 4);
     this.gl.readPixels(
       0, 0,
@@ -130,16 +135,26 @@ export class GLContext {
       pixels,
     );
 
-    const img = await Sharp(pixels, {
-      raw: {
-        width: this.width,
-        height: this.height,
-        channels: 4,
-      },
-    }).png().toBuffer();
-
-    this.gl.getExtension('STACKGL_destroy_context').destroy();
-    return img;
+    switch (format) {
+      case 'png':
+        return await Sharp(pixels, {
+          raw: {
+            width: this.width,
+            height: this.height,
+            channels: 4,
+          },
+        }).png({ compressionLevel: 0 }).toBuffer();
+      case 'webp':
+        return await Sharp(pixels, {
+          raw: {
+            width: this.width,
+            height: this.height,
+            channels: 4,
+          },
+        }).webp().toBuffer();
+      default:
+        throw new Error('unknown format');
+    }
   }
 
   private loadShader(fileName: string) {

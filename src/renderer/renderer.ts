@@ -12,6 +12,8 @@ function loadBackgroundImage(): Promise<Buffer> {
 export abstract class Renderer {
   public static readonly ImageSize = 640;
 
+  public abstract timeLength: number;
+
   protected readonly context: GLContext;
 
   constructor() {
@@ -39,6 +41,7 @@ export abstract class Renderer {
   }
 
   public async draw(time: number): Promise<void> {
+    this.context.reset();
     await this.drawBackground();
 
     mat4.translate(this.context.transform, this.context.transform, [

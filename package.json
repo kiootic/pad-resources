@@ -20,11 +20,15 @@
   "dependencies": {
     "@types/gl": "^4.1.0",
     "@types/gl-matrix": "^2.4.4",
+    "@types/minimist": "^1.2.0",
+    "@types/rimraf": "^2.0.2",
     "axios": "^0.18.0",
     "gl": "^4.1.1",
     "gl-matrix": "^3.0.0",
     "lodash": "^4.17.10",
+    "minimist": "^1.2.0",
     "mkdirp": "^0.5.1",
+    "rimraf": "^2.6.3",
     "sharp": "^0.20.3",
     "sqlite": "^2.9.2"
   }

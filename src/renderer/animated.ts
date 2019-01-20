@@ -39,6 +39,10 @@ export class AnimatedRenderer extends Renderer {
   private readonly animationLength: number;
   private readonly boneChildrens = new Map<number, ISCBone[]>();
 
+  public get timeLength(): number {
+    return this.animationLength;
+  }
+
   constructor(buf: Buffer) {
     super();
 
