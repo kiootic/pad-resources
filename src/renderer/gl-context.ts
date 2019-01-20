@@ -117,10 +117,10 @@ export class GLContext {
 
     const tintLocation = this.gl.getUniformLocation(program, 'u_tint');
     this.gl.uniform4f(tintLocation,
-      ((tint >> 0) & 0xff) / 0xff,
-      ((tint >> 8) & 0xff) / 0xff,
-      ((tint >> 16) & 0xff) / 0xff,
-      ((tint >> 14) & 0xff) / 0xff,
+      ((tint >>> 16) & 0xff) / 0xff,
+      ((tint >>> 8) & 0xff) / 0xff,
+      ((tint >>> 0) & 0xff) / 0xff,
+      ((tint >>> 24) & 0xff) / 0xff,
     );
 
     this.gl.drawArrays(this.gl.TRIANGLES, 0, positions.length / 2);

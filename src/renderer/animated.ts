@@ -112,6 +112,8 @@ export class AnimatedRenderer extends Renderer {
     const animatedDeformations = this.animateMeshDeformations(animationTime);
 
     const transforms = this.computeTransforms(animatedTransforms);
+    const tints = this.computeTints(animatedTints);
+
     function applyTransform(boneId: number, meshId: number, i: number, v: Vec2) {
       const vec: vec2 = vec2.clone([v.x, v.y]);
       const animatedDeformation = animatedDeformations.get(meshId);
@@ -128,7 +130,7 @@ export class AnimatedRenderer extends Renderer {
       if (!skin) continue;
       const mesh = this.isc.meshs[skin.meshId];
 
-      let tint = animatedTints.get(slot.id);
+      let tint = tints.get(slot.id);
       if (tint === undefined) {
         tint = slot.tint;
       }
@@ -164,7 +166,7 @@ export class AnimatedRenderer extends Renderer {
       }
 
       const texture = this.textures[mesh.textureId];
-      this.context.setBlendMode('normal');
+      this.context.setBlendMode(slot.flags === 1 ? 'additive' : 'normal');
       this.context.drawTex(texture, new Float32Array(positionBuf), new Float32Array(texCoordsBuf), tint);
     }
   }
@@ -203,7 +205,7 @@ export class AnimatedRenderer extends Renderer {
   private animateSlotTints(time: number) {
     const slotTints = new Map<number, number>();
     for (const slot of this.isa.slots) {
-      let tint = 0xfffffff;
+      let tint = 0xffffffff;
 
       if (slot.tint) {
         const [frameA, frameB] = findKeyFrames(slot.tint, time);
@@ -280,5 +282,34 @@ export class AnimatedRenderer extends Renderer {
     compute(0, mat2d.fromScaling(mat2d.create(), [1, -1]));
 
     return computedTransforms;
+  }
+
+  private computeTints(animatedTints: Map<number, number>) {
+    const computedTints = new Map<number, number>();
+
+    function blend(dst: number, src: number, alpha: number) {
+      return src * alpha + dst * (1 - alpha);
+    }
+
+    for (const slot of this.isc.slots) {
+      let a = 0xff;
+      let r = (slot.tint >>> 16) & 0xff;
+      let g = (slot.tint >>> 8) & 0xff;
+      let b = (slot.tint >>> 0) & 0xff;
+
+      const animatedTint = animatedTints.get(slot.id);
+      if (typeof animatedTint === 'number') {
+        const alpha = (animatedTint >>> 24) / 0xff;
+        a = animatedTint >>> 24;
+        r = Math.floor(blend(r, (animatedTint >>> 16) & 0xff, alpha));
+        g = Math.floor(blend(g, (animatedTint >>> 8) & 0xff, alpha));
+        b = Math.floor(blend(b, (animatedTint >>> 0) & 0xff, alpha));
+      }
+
+      const tint = a * 0x1000000 + r * 0x10000 + g * 0x100 + b * 0x1;
+      computedTints.set(slot.id, tint);
+    }
+
+    return computedTints;
   }
 }
