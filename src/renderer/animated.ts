@@ -106,7 +106,6 @@ export class AnimatedRenderer extends Renderer {
     const animatedTransforms = this.animateBoneTransforms(animationTime);
     const animatedTints = this.animateSlotTints(animationTime);
     const animatedDeformations = this.animateMeshDeformations(animationTime);
-    animatedTints.toString();
 
     const transforms = this.computeTransforms(animatedTransforms);
     function applyTransform(boneId: number, meshId: number, i: number, v: Vec2) {
@@ -124,6 +123,11 @@ export class AnimatedRenderer extends Renderer {
       const skin = this.isc.skins[slot.skinId];
       if (!skin) continue;
       const mesh = this.isc.meshs[skin.meshId];
+
+      let tint = animatedTints.get(slot.id);
+      if (tint === undefined) {
+        tint = slot.tint;
+      }
 
       const positions = mesh.vertices.map((v, i) => {
         if (Array.isArray(v.dst)) {
@@ -157,7 +161,7 @@ export class AnimatedRenderer extends Renderer {
 
       const texture = this.textures[mesh.textureId];
       this.context.setBlendMode('normal');
-      this.context.drawTex(texture, new Float32Array(positionBuf), new Float32Array(texCoordsBuf));
+      this.context.drawTex(texture, new Float32Array(positionBuf), new Float32Array(texCoordsBuf), tint);
     }
   }
 

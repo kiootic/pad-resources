@@ -77,7 +77,7 @@ export class GLContext {
     return tex;
   }
 
-  public drawTex(tex: WebGLTexture, positions: Float32Array, texCoords: Float32Array) {
+  public drawTex(tex: WebGLTexture, positions: Float32Array, texCoords: Float32Array, tint = 0xffffffff) {
     this.gl.bindTexture(this.gl.TEXTURE_2D, tex);
 
     const program = this.loadProgram('mesh.vert', 'mesh.frag');
@@ -109,6 +109,15 @@ export class GLContext {
 
     const textureLocation = this.gl.getUniformLocation(program, 'u_texture');
     this.gl.uniform1i(textureLocation, 0);
+
+    const tintLocation = this.gl.getUniformLocation(program, 'u_tint');
+    this.gl.uniform4f(tintLocation,
+      ((tint >> 0) & 0xff) / 0xff,
+      ((tint >> 8) & 0xff) / 0xff,
+      ((tint >> 16) & 0xff) / 0xff,
+      ((tint >> 14) & 0xff) / 0xff,
+    );
+
     this.gl.drawArrays(this.gl.TRIANGLES, 0, positions.length / 2);
   }
 
