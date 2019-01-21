@@ -88,6 +88,8 @@ export async function main(args: string[]) {
       time = (time - 1 / 30 + renderer.timeLength) % renderer.timeLength;
     } else if (key.name === 'right') {
       time = (time + 1 / 30 + renderer.timeLength) % renderer.timeLength;
+    } else if (key.name === 'b') {
+      renderer.background = !renderer.background;
     }
   });
 

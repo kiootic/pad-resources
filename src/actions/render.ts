@@ -14,7 +14,7 @@ import { SimpleRenderer } from '../renderer/simple';
 
 function usage() {
   // tslint:disable-next-line:max-line-length
-  console.log('usage: pad-resources render --extlist <extlist bin> --id <id> --bin <bin file> --out <out file> [--time <time>] [--video]');
+  console.log('usage: pad-resources render --extlist <extlist bin> --id <id> --bin <bin file> --out <out file> [--time <time>] [--video] [--nobg]');
 }
 
 interface Args {
@@ -24,6 +24,7 @@ interface Args {
   out: any;
   time?: number;
   video?: boolean;
+  nobg?: boolean;
 }
 
 export async function main(args: string[]) {
@@ -40,6 +41,7 @@ export async function main(args: string[]) {
 
   let time = typeof parsedArgs.time === 'number' ? parsedArgs.time : 0;
   const video = !!parsedArgs.video;
+  const nobg = !!parsedArgs.nobg;
 
   const extlist = Extlist.load(readFileSync(parsedArgs.extlist));
   const entry = extlist.entries.find((e) => !e.isCards && e.id === Number(parsedArgs.id));
@@ -63,6 +65,8 @@ export async function main(args: string[]) {
     console.error('unsupported format');
     return false;
   }
+
+  renderer.background = !nobg;
 
   let outBuf: Buffer;
   if (video) {

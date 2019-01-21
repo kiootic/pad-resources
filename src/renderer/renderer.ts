@@ -16,11 +16,17 @@ export abstract class Renderer {
 
   public readonly context: GLContext;
 
+  public background = true;
+
   constructor(gl: WebGLRenderingContext) {
     this.context = new GLContext(gl, Renderer.ImageSize, Renderer.ImageSize);
   }
 
   public async drawBackground() {
+    if (!this.background) {
+      return;
+    }
+
     if (!BackgroundImage) {
       BackgroundImage = await loadBackgroundImage();
     }
