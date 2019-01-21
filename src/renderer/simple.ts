@@ -13,8 +13,8 @@ export class SimpleRenderer extends Renderer {
     return numFrames * timePerFrame;
   }
 
-  constructor(private readonly entry: ExtlistEntry, buf: Buffer) {
-    super();
+  constructor(gl: WebGLRenderingContext, private readonly entry: ExtlistEntry, buf: Buffer) {
+    super(gl);
     const texInfo = TEX.load(buf).entries[0];
     const imageBuf = TEX.decodeRaw(texInfo);
     this.tex = this.context.loadTex(texInfo.width, texInfo.height, imageBuf);

@@ -14,10 +14,10 @@ export abstract class Renderer {
 
   public abstract timeLength: number;
 
-  protected readonly context: GLContext;
+  public readonly context: GLContext;
 
-  constructor() {
-    this.context = new GLContext(Renderer.ImageSize, Renderer.ImageSize);
+  constructor(gl: WebGLRenderingContext) {
+    this.context = new GLContext(gl, Renderer.ImageSize, Renderer.ImageSize);
   }
 
   public async drawBackground() {

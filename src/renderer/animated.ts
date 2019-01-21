@@ -43,8 +43,8 @@ export class AnimatedRenderer extends Renderer {
     return this.animationLength;
   }
 
-  constructor(buf: Buffer) {
-    super();
+  constructor(gl: WebGLRenderingContext, buf: Buffer) {
+    super(gl);
 
     const { files } = BBIN.load(buf);
     const texFile = files.find((file) => TEX.match(file));

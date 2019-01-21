@@ -1,5 +1,6 @@
 import { spawnSync } from 'child_process';
 import { mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import gl from 'gl';
 import minimist from 'minimist';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -12,7 +13,8 @@ import { Renderer } from '../renderer/renderer';
 import { SimpleRenderer } from '../renderer/simple';
 
 function usage() {
-  console.log('usage: pad-resources render --extlist <extlist bin> --id <id> --bin <bin file> --out <out file>');
+  // tslint:disable-next-line:max-line-length
+  console.log('usage: pad-resources render --extlist <extlist bin> --id <id> --bin <bin file> --out <out file> [--time <time>] [--video]');
 }
 
 interface Args {
@@ -48,10 +50,15 @@ export async function main(args: string[]) {
 
   const buf = readFileSync(parsedArgs.bin);
   let renderer: Renderer;
+  const context = gl(Renderer.ImageSize, Renderer.ImageSize, {
+    antialias: true,
+    alpha: true,
+    preserveDrawingBuffer: true,
+  });
   if (TEX.match(buf)) {
-    renderer = new SimpleRenderer(entry, buf);
+    renderer = new SimpleRenderer(context, entry, buf);
   } else if (BBIN.match(buf)) {
-    renderer = new AnimatedRenderer(buf);
+    renderer = new AnimatedRenderer(context, buf);
   } else {
     console.error('unsupported format');
     return false;

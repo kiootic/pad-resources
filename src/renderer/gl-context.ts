@@ -1,5 +1,4 @@
 import { readFileSync } from 'fs';
-import gl from 'gl';
 import { mat4 } from 'gl-matrix';
 import { join } from 'path';
 import Sharp from 'sharp';
@@ -20,20 +19,24 @@ export class GLContext {
   }
 
   public readonly transform = mat4.identity(mat4.create());
+  public readonly projection = mat4.ortho(mat4.create(),
+    0, this.width,
+    0, this.height,
+    -1, 1,
+  );
 
-  private readonly gl: WebGLRenderingContext;
   private readonly programs = new Map<string, WebGLProgram>();
   private readonly shaders = new Map<string, WebGLShader>();
 
   private readonly posBuf: WebGLBuffer;
   private readonly texCoordsBuf: WebGLBuffer;
 
-  constructor(public readonly width: number, public readonly height: number) {
-    this.gl = gl(width, height, {
-      antialias: true,
-      alpha: true,
-      preserveDrawingBuffer: true,
-    });
+  constructor(
+    private readonly gl: WebGLRenderingContext,
+    public readonly width: number,
+    public readonly height: number,
+  ) {
+    this.gl = gl;
 
     const posBuf = this.gl.createBuffer();
     if (!posBuf) {
@@ -102,11 +105,7 @@ export class GLContext {
 
     const transform = mat4.mul(
       mat4.create(),
-      mat4.ortho(mat4.create(),
-        0, this.width,
-        0, this.height,
-        -1, 1,
-      ),
+      this.projection,
       this.transform,
     );
     const transformLocation = this.gl.getUniformLocation(program, 'u_transform');
