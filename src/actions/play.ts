@@ -67,16 +67,34 @@ export async function main(args: string[]) {
     if (!paused) {
       time = (now() - begin) % renderer.timeLength;
     }
-    process.stdout.write(`\r${time.toFixed(3)}/${renderer.timeLength.toFixed(3)}`);
     await renderer.draw(time);
     gl.nextFrame(true);
     setTimeout(render, 10);
   }
   render();
 
+  let directive = '';
+  let inputDirective = false;
+
   emitKeypressEvents(process.stdin);
   process.stdin.setRawMode!(true);
   process.stdin.on('keypress', (_, key: Key) => {
+    if (inputDirective) {
+      if (key.name === 'enter') {
+        inputDirective = false;
+        process.stdin.setRawMode!(true);
+        if (renderer.directives.has(directive)) {
+          console.log(`delete: ${directive}`);
+          renderer.directives.delete(directive);
+        } else {
+          console.log(`add: ${directive}`);
+          renderer.directives.add(directive);
+        }
+      } else {
+        directive += key.sequence;
+      }
+      return;
+    }
     if (key.sequence === '\u0003') {
       process.exit();
     } else if (key.name === 'space') {
@@ -84,12 +102,19 @@ export async function main(args: string[]) {
       if (!paused) {
         begin = now() - time;
       }
+    } else if (key.name === 't') {
+      process.stdout.write(`\r${time.toFixed(3)}/${renderer.timeLength.toFixed(3)}`);
     } else if (key.name === 'left') {
       time = (time - 1 / 30 + renderer.timeLength) % renderer.timeLength;
     } else if (key.name === 'right') {
       time = (time + 1 / 30 + renderer.timeLength) % renderer.timeLength;
     } else if (key.name === 'b') {
       renderer.background = !renderer.background;
+    } else if (key.name === 'd') {
+      process.stdout.write('\n');
+      inputDirective = true;
+      directive = '';
+      process.stdin.setRawMode!(false);
     }
   });
 

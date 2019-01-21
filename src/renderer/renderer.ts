@@ -18,6 +18,8 @@ export abstract class Renderer {
 
   public background = true;
 
+  public readonly directives = new Set<string>();
+
   constructor(gl: WebGLRenderingContext) {
     this.context = new GLContext(gl, Renderer.ImageSize, Renderer.ImageSize);
   }
