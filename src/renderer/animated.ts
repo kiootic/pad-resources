@@ -6,27 +6,39 @@ import { Transform, Vec2 } from '../models/math';
 import { TEX } from '../models/tex';
 import { Renderer } from './renderer';
 
-function findKeyFrames(animation: ISAAnimation, time: number): [ISAKeyFrame, ISAKeyFrame] {
+function findKeyFrames(animation: ISAAnimation, time: number, totalTime: number): InterpolationDef {
   let nextFrameIndex = animation.frames.findIndex((frame) => frame.time > time);
   if (nextFrameIndex < 0) nextFrameIndex = animation.frames.length;
 
   const thisFrame = animation.frames[(nextFrameIndex - 1 + animation.frames.length) % animation.frames.length];
   const nextFrame = animation.frames[nextFrameIndex] || animation.frames[0];
-  return [thisFrame, nextFrame];
+  return {
+    time, totalTime,
+    frameA: thisFrame,
+    frameB: nextFrame,
+  };
 }
 
-function interpolate(t: number, frameA: ISAKeyFrame, a: number, frameB: ISAKeyFrame, b: number) {
-  const duration = frameB.time - frameA.time;
+interface InterpolationDef {
+  time: number;
+  totalTime: number;
+  frameA: ISAKeyFrame;
+  frameB: ISAKeyFrame;
+}
+
+function interpolate(def: InterpolationDef, a: number, b: number) {
+  let duration = def.frameB.time - def.frameA.time;
+  if (duration < 0) duration += def.totalTime;
   if (duration === 0) return a;
 
-  switch (frameA.interpolation.kind) {
+  switch (def.frameA.interpolation.kind) {
     default:
     case ISAInterpolationKind.Constant:
       return a;
     case ISAInterpolationKind.Linear:
-      return a + (b - a) * (t - frameA.time) / duration;
+      return a + (b - a) * (def.time - def.frameA.time) / duration;
     case ISAInterpolationKind.B: {
-      return a + (b - a) * (t - frameA.time) / duration;
+      return a + (b - a) * (def.time - def.frameA.time) / duration;
     }
   }
 }
@@ -179,24 +191,24 @@ export class AnimatedRenderer extends Renderer {
       const transform = Transform.identity();
 
       if (bone.rotation) {
-        const [frameA, frameB] = findKeyFrames(bone.rotation, time);
-        if (frameA.frame.kind !== ISAFrameKind.Angle || frameB.frame.kind !== ISAFrameKind.Angle)
+        const def = findKeyFrames(bone.rotation, time, this.animationLength);
+        if (def.frameA.frame.kind !== ISAFrameKind.Angle || def.frameB.frame.kind !== ISAFrameKind.Angle)
           throw new Error('unexpected frame kind');
-        transform.angle += interpolate(time, frameA, frameA.frame.angle, frameB, frameB.frame.angle);
+        transform.angle += interpolate(def, def.frameA.frame.angle, def.frameB.frame.angle);
       }
       if (bone.translation) {
-        const [frameA, frameB] = findKeyFrames(bone.translation, time);
-        if (frameA.frame.kind !== ISAFrameKind.Vertex || frameB.frame.kind !== ISAFrameKind.Vertex)
+        const def = findKeyFrames(bone.translation, time, this.animationLength);
+        if (def.frameA.frame.kind !== ISAFrameKind.Vertex || def.frameB.frame.kind !== ISAFrameKind.Vertex)
           throw new Error('unexpected frame kind');
-        transform.tx += interpolate(time, frameA, frameA.frame.vertex.x, frameB, frameB.frame.vertex.x);
-        transform.ty += interpolate(time, frameA, frameA.frame.vertex.y, frameB, frameB.frame.vertex.y);
+        transform.tx += interpolate(def, def.frameA.frame.vertex.x, def.frameB.frame.vertex.x);
+        transform.ty += interpolate(def, def.frameA.frame.vertex.y, def.frameB.frame.vertex.y);
       }
       if (bone.scaling) {
-        const [frameA, frameB] = findKeyFrames(bone.scaling, time);
-        if (frameA.frame.kind !== ISAFrameKind.Vertex || frameB.frame.kind !== ISAFrameKind.Vertex)
+        const def = findKeyFrames(bone.scaling, time, this.animationLength);
+        if (def.frameA.frame.kind !== ISAFrameKind.Vertex || def.frameB.frame.kind !== ISAFrameKind.Vertex)
           throw new Error('unexpected frame kind');
-        transform.sx *= interpolate(time, frameA, frameA.frame.vertex.x, frameB, frameB.frame.vertex.x);
-        transform.sy *= interpolate(time, frameA, frameA.frame.vertex.y, frameB, frameB.frame.vertex.y);
+        transform.sx *= interpolate(def, def.frameA.frame.vertex.x, def.frameB.frame.vertex.x);
+        transform.sy *= interpolate(def, def.frameA.frame.vertex.y, def.frameB.frame.vertex.y);
       }
 
       boneTransforms.set(bone.id, transform);
@@ -210,22 +222,22 @@ export class AnimatedRenderer extends Renderer {
       let tint = 0xffffffff;
 
       if (slot.tint) {
-        const [frameA, frameB] = findKeyFrames(slot.tint, time);
-        if (frameA.frame.kind !== ISAFrameKind.Color || frameB.frame.kind !== ISAFrameKind.Color)
+        const def = findKeyFrames(slot.tint, time, this.animationLength);
+        if (def.frameA.frame.kind !== ISAFrameKind.Color || def.frameB.frame.kind !== ISAFrameKind.Color)
           throw new Error('unexpected frame kind');
-        const a = frameA.frame.color;
-        const b = frameB.frame.color;
+        const a = def.frameA.frame.color;
+        const b = def.frameB.frame.color;
         tint =
-          Math.floor(interpolate(time, frameA, (a >>> 24) & 0xff, frameB, (b >>> 24) & 0xff)) * 0x1000000 +
-          Math.floor(interpolate(time, frameA, (a >>> 16) & 0xff, frameB, (b >>> 16) & 0xff)) * 0x10000 +
-          Math.floor(interpolate(time, frameA, (a >>> 8) & 0xff, frameB, (b >>> 8) & 0xff)) * 0x100 +
-          Math.floor(interpolate(time, frameA, (a >>> 0) & 0xff, frameB, (b >>> 0) & 0xff)) * 0x1;
+          Math.floor(interpolate(def, (a >>> 24) & 0xff, (b >>> 24) & 0xff)) * 0x1000000 +
+          Math.floor(interpolate(def, (a >>> 16) & 0xff, (b >>> 16) & 0xff)) * 0x10000 +
+          Math.floor(interpolate(def, (a >>> 8) & 0xff, (b >>> 8) & 0xff)) * 0x100 +
+          Math.floor(interpolate(def, (a >>> 0) & 0xff, (b >>> 0) & 0xff)) * 0x1;
       }
       if (slot.visibility) {
-        const [frameA, frameB] = findKeyFrames(slot.visibility, time);
-        if (frameA.frame.kind !== ISAFrameKind.Visibility || frameB.frame.kind !== ISAFrameKind.Visibility)
+        const def = findKeyFrames(slot.visibility, time, this.animationLength);
+        if (def.frameA.frame.kind !== ISAFrameKind.Visibility || def.frameB.frame.kind !== ISAFrameKind.Visibility)
           throw new Error('unexpected frame kind');
-        tint = frameA.frame.visibility ? tint : 0;
+        tint = def.frameA.frame.visibility ? tint : 0;
       }
 
       slotTints.set(slot.id, tint);
@@ -239,17 +251,17 @@ export class AnimatedRenderer extends Renderer {
       const deformation: Vec2[] = [];
 
       if (mesh.deformation) {
-        const [frameA, frameB] = findKeyFrames(mesh.deformation, time);
-        if (frameA.frame.kind !== ISAFrameKind.Points || frameB.frame.kind !== ISAFrameKind.Points)
+        const def = findKeyFrames(mesh.deformation, time, this.animationLength);
+        if (def.frameA.frame.kind !== ISAFrameKind.Points || def.frameB.frame.kind !== ISAFrameKind.Points)
           throw new Error('unexpected frame kind');
 
-        const numPoints = Math.max(frameA.frame.points.length, frameB.frame.points.length);
+        const numPoints = Math.max(def.frameA.frame.points.length, def.frameB.frame.points.length);
         for (let i = 0; i < numPoints; i++) {
-          const a = frameA.frame.points[i] || { x: 0, y: 0 };
-          const b = frameB.frame.points[i] || { x: 0, y: 0 };
+          const a = def.frameA.frame.points[i] || { x: 0, y: 0 };
+          const b = def.frameB.frame.points[i] || { x: 0, y: 0 };
           deformation.push({
-            x: interpolate(time, frameA, a.x, frameB, b.x),
-            y: interpolate(time, frameA, a.y, frameB, b.y),
+            x: interpolate(def, a.x, b.x),
+            y: interpolate(def, a.y, b.y),
           });
         }
       }
