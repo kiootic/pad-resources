@@ -279,10 +279,19 @@ export class AnimatedRenderer extends Renderer {
 
       const boneTransform = this.isc.bones[id].transform;
       const animatedTransform = animatedTransforms.get(id) || Transform.identity();
+
       mat2d.translate(transform, transform, [
         boneTransform.tx + animatedTransform.tx,
         boneTransform.ty + animatedTransform.ty,
       ]);
+
+      if (this.isc.bones[id].transformMode === 2) {
+        transform[0] = Math.sqrt(transform[0] * transform[0] + transform[2] * transform[2]);
+        transform[3] = -Math.sqrt(transform[1] * transform[1] + transform[3] * transform[3]);
+        transform[1] = 0;
+        transform[2] = 0;
+      }
+
       mat2d.rotate(transform, transform, (boneTransform.angle + animatedTransform.angle) * Math.PI / 180);
       mat2d.scale(transform, transform, [
         boneTransform.sx * animatedTransform.sx,

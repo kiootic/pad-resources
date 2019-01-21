@@ -17,6 +17,8 @@ export interface ISCBone {
   parentId: number;
   name: string;
   transform: Transform;
+
+  transformMode: number;
 }
 
 export interface ISCSlot {
@@ -109,6 +111,7 @@ export const ISC = {
           tx: buf.readFloatLE(offsetBones + i * 0x40 + 24),
           ty: buf.readFloatLE(offsetBones + i * 0x40 + 28),
         },
+        transformMode: buf.readUInt32LE(offsetBones + i * 0x40 + 40),
       });
     }
 
