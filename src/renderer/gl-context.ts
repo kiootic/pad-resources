@@ -25,6 +25,8 @@ export class GLContext {
     -1, 1,
   );
 
+  public readonly WHITE: WebGLTexture;
+
   private readonly programs = new Map<string, WebGLProgram>();
   private readonly shaders = new Map<string, WebGLShader>();
 
@@ -51,6 +53,18 @@ export class GLContext {
     this.texCoordsBuf = texCoordsBuf;
 
     this.gl.enable(this.gl.BLEND);
+
+    const white = gl.createTexture()!;
+    if (!white) {
+      throw new Error('gl.createTexture');
+    }
+    gl.bindTexture(gl.TEXTURE_2D, white);
+    gl.texImage2D(
+      gl.TEXTURE_2D, 0, gl.RGBA,
+      1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+      new Uint8Array([0xff, 0xff, 0xff, 0xff]),
+    );
+    this.WHITE = white;
   }
 
   public reset() {

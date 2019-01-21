@@ -4,7 +4,6 @@ import Sharp from 'sharp';
 import { GLContext } from './gl-context';
 
 const BackgroundImagePath = join(__dirname, 'card-bg.png');
-let BackgroundImage: Buffer | undefined;
 function loadBackgroundImage(): Promise<Buffer> {
   return Sharp(BackgroundImagePath).raw().toBuffer();
 }
@@ -20,6 +19,8 @@ export abstract class Renderer {
 
   public readonly directives = new Set<string>();
 
+  private backgroundTexture: WebGLTexture | undefined;
+
   constructor(gl: WebGLRenderingContext) {
     this.context = new GLContext(gl, Renderer.ImageSize, Renderer.ImageSize);
   }
@@ -29,13 +30,12 @@ export abstract class Renderer {
       return;
     }
 
-    if (!BackgroundImage) {
-      BackgroundImage = await loadBackgroundImage();
+    if (!this.backgroundTexture) {
+      this.backgroundTexture = await this.context.loadTex(512, 512, await loadBackgroundImage());
     }
 
-    const tex = await this.context.loadTex(512, 512, BackgroundImage);
     this.context.drawTex(
-      tex,
+      this.backgroundTexture,
       GLContext.makeQuad(
         0, 0,
         Renderer.ImageSize, Renderer.ImageSize,
