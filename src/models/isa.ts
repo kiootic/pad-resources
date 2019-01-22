@@ -23,7 +23,7 @@ export interface ISASlot {
   id: number;
   name: string;
   tint: ISAAnimation | null;
-  visibility: ISAAnimation | null;
+  attachment: ISAAnimation | null;
 }
 
 export interface ISASkin {
@@ -52,14 +52,14 @@ export type ISAFrame =
   ISAFrameAngle |
   ISAFrameColor |
   ISAFrameVertex |
-  ISAFrameVisibility |
+  ISAFrameAttachment |
   ISAFramePoints;
 
 export enum ISAFrameKind {
   Angle = 'angle',
   Color = 'color',
   Vertex = 'vertex',
-  Visibility = 'visibility',
+  Attachment = 'attachment',
   Points = 'points',
 }
 
@@ -78,10 +78,9 @@ export interface ISAFrameVertex {
   vertex: Vec2;
 }
 
-export interface ISAFrameVisibility {
-  kind: ISAFrameKind.Visibility;
-  visibility: boolean;
-  name: string;
+export interface ISAFrameAttachment {
+  kind: ISAFrameKind.Attachment;
+  skinName: string;
 }
 
 export interface ISAFramePoints {
@@ -115,7 +114,7 @@ const FrameKindMap: Record<string, ISAFrameKind> = {
   A: ISAFrameKind.Angle,
   C: ISAFrameKind.Color,
   V: ISAFrameKind.Vertex,
-  T: ISAFrameKind.Visibility,
+  T: ISAFrameKind.Attachment,
   P: ISAFrameKind.Points,
 };
 
@@ -167,11 +166,10 @@ function readAnimation(buf: Buffer, offset: number): ISAAnimation | null {
         };
         pos += 0x10;
         break;
-      case ISAFrameKind.Visibility:
+      case ISAFrameKind.Attachment:
         frame = {
           kind: frameKind,
-          visibility: buf.readUInt32LE(pos + 8) === 0,
-          name: readASCII(buf, pos + 0x10),
+          skinName: readASCII(buf, pos + 0x10),
         };
         pos += 0x20;
         break;
@@ -265,7 +263,7 @@ export const ISA = {
         id: i,
         name: readASCII(buf, offsetSlots + i * 0x20 + 0x10),
         tint: readAnimation(buf, buf.readUInt32LE(offsetSlots + i * 0x20 + 4)),
-        visibility: readAnimation(buf, buf.readUInt32LE(offsetSlots + i * 0x20 + 8)),
+        attachment: readAnimation(buf, buf.readUInt32LE(offsetSlots + i * 0x20 + 8)),
       });
     }
 
