@@ -91,24 +91,24 @@ export interface ISAFramePoints {
 
 export type ISAInterpolation =
   ISAInterpolationSimple |
-  ISAInterpolationB;
+  ISAInterpolationBezier;
 
 export enum ISAInterpolationKind {
   Constant = 'constant',
   Linear = 'linear',
-  B = 'B',
+  Bezier = 'B',
 }
 
 export interface ISAInterpolationSimple {
   kind: ISAInterpolationKind.Constant | ISAInterpolationKind.Linear;
 }
 
-export interface ISAInterpolationB {
-  kind: ISAInterpolationKind.B;
-  a: number;
-  b: number;
-  c: number;
-  d: number;
+export interface ISAInterpolationBezier {
+  kind: ISAInterpolationKind.Bezier;
+  x1: number;
+  y1: number;
+  x2: number;
+  y2: number;
 }
 
 const FrameKindMap: Record<string, ISAFrameKind> = {
@@ -122,7 +122,7 @@ const FrameKindMap: Record<string, ISAFrameKind> = {
 const InterpolationKindMap: Record<string, ISAInterpolationKind> = {
   C: ISAInterpolationKind.Constant,
   L: ISAInterpolationKind.Linear,
-  B: ISAInterpolationKind.B,
+  B: ISAInterpolationKind.Bezier,
 };
 
 function readAnimation(buf: Buffer, offset: number): ISAAnimation | null {
@@ -146,8 +146,11 @@ function readAnimation(buf: Buffer, offset: number): ISAAnimation | null {
 
     const time = buf.readFloatLE(pos + 4);
 
-    let frame: ISAFrame;
     const frameKind = FrameKindMap[fsig[2]];
+    const interpolationKind = InterpolationKindMap[fsig[3]];
+    let interpolationPos: number | undefined;
+
+    let frame: ISAFrame;
     switch (frameKind) {
       case ISAFrameKind.Angle:
         frame = { kind: frameKind, angle: buf.readFloatLE(pos + 8) };
@@ -174,35 +177,42 @@ function readAnimation(buf: Buffer, offset: number): ISAAnimation | null {
         break;
       case ISAFrameKind.Points:
         const numPoints = buf.readUInt16LE(pos + 10);
+        let pointsPos = pos + 0x10;
+        if (interpolationKind === ISAInterpolationKind.Bezier) {
+          interpolationPos = pos + 0x10;
+          pointsPos = pos + 0x20;
+        }
         frame = {
           kind: frameKind,
           points: range(numPoints).map((j) => ({
-            x: buf.readFloatLE(pos + 0x10 + j * 8 + 0),
-            y: buf.readFloatLE(pos + 0x10 + j * 8 + 4),
+            x: buf.readFloatLE(pointsPos + j * 8 + 0),
+            y: buf.readFloatLE(pointsPos + j * 8 + 4),
           })),
         };
-        pos += 0x10 + ((numPoints + 1) & ~1) * 8;
+        pos = pointsPos + ((numPoints + 1) & ~1) * 8;
         break;
       default:
         throw new Error(`unsupported key frame kind: ${fsig[2]}`);
     }
 
     let interpolation: ISAInterpolation;
-    const interpolationKind = InterpolationKindMap[fsig[3]];
     switch (interpolationKind) {
       case ISAInterpolationKind.Constant:
       case ISAInterpolationKind.Linear:
         interpolation = { kind: interpolationKind };
         break;
-      case ISAInterpolationKind.B:
+      case ISAInterpolationKind.Bezier:
+        const ctrlPointsPos = interpolationPos || pos;
         interpolation = {
           kind: interpolationKind,
-          a: buf.readFloatLE(pos + 0),
-          b: buf.readFloatLE(pos + 4),
-          c: buf.readFloatLE(pos + 8),
-          d: buf.readFloatLE(pos + 12),
+          x1: buf.readFloatLE(ctrlPointsPos + 0),
+          y1: buf.readFloatLE(ctrlPointsPos + 4),
+          x2: buf.readFloatLE(ctrlPointsPos + 8),
+          y2: buf.readFloatLE(ctrlPointsPos + 12),
         };
-        pos += 0x10;
+        if (ctrlPointsPos === pos) {
+          pos += 0x10;
+        }
         break;
       default:
         throw new Error(`unsupported interpolation type: ${fsig[3]}`);

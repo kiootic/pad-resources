@@ -126,17 +126,6 @@ export class AnimatedRenderer extends Renderer {
     const transforms = this.computeTransforms(animatedTransforms);
     const tints = this.computeTints(animatedTints);
 
-    function applyTransform(boneId: number, meshId: number, i: number, v: Vec2) {
-      const vec: vec2 = vec2.clone([v.x, v.y]);
-      const animatedDeformation = animatedDeformations.get(meshId);
-      if (animatedDeformation && animatedDeformation[i]) {
-        vec[0] += animatedDeformation[i].x;
-        vec[1] += animatedDeformation[i].y;
-      }
-      vec2.transformMat2d(vec, vec, transforms.get(boneId) || mat2d.identity(mat2d.create()));
-      return vec;
-    }
-
     for (const slot of this.isc.slots) {
       const skin = this.isc.skins[slot.skinId];
       if (!skin) continue;
@@ -147,16 +136,25 @@ export class AnimatedRenderer extends Renderer {
         tint = slot.tint;
       }
 
-      const positions = mesh.vertices.map((v, i) => {
-        if (Array.isArray(v.dst)) {
-          const t = vec2.create();
-          for (const { boneId, vertex, ratio } of v.dst) {
-            vec2.scaleAndAdd(t, t, applyTransform(boneId, mesh.id, i, vertex), ratio);
+      let deformIndex = 0;
+      const deformation = animatedDeformations.get(mesh.id) || [];
+      const identity = mat2d.identity(mat2d.create());
+
+      const positions = mesh.vertices.map(({ dst }, i) => {
+        const v = vec2.create();
+        if (Array.isArray(dst)) {
+          for (const { boneId, vertex, ratio } of dst) {
+            const deform = deformation[deformIndex++] || { x: 0, y: 0 };
+            const vv = vec2.fromValues(vertex.x + deform.x, vertex.y + deform.y);
+            vec2.transformMat2d(vv, vv, transforms.get(boneId) || identity);
+            vec2.scaleAndAdd(v, v, vv, ratio);
           }
-          return t;
         } else {
-          return applyTransform(slot.boneId, mesh.id, i, v.dst);
+          const deform = deformation[deformIndex++] || { x: 0, y: 0 };
+          vec2.set(v, dst.x + deform.x, dst.y + deform.y);
+          vec2.transformMat2d(v, v, transforms.get(slot.boneId) || identity);
         }
+        return v;
       });
 
       const positionBuf: number[] = [];
