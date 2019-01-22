@@ -4,6 +4,7 @@ import { ISA, ISAAnimation, ISAFrameKind, ISAInterpolationKind, ISAKeyFrame } fr
 import { ISC, ISCBone } from '../models/isc';
 import { Transform, Vec2 } from '../models/math';
 import { TEX } from '../models/tex';
+import { bezier, solveBezier } from './bezier';
 import { Renderer } from './renderer';
 
 function findKeyFrames(animation: ISAAnimation, time: number, totalTime: number): InterpolationDef {
@@ -37,8 +38,12 @@ function interpolate(def: InterpolationDef, a: number, b: number) {
       return a;
     case ISAInterpolationKind.Linear:
       return a + (b - a) * (def.time - def.frameA.time) / duration;
-    case ISAInterpolationKind.B: {
-      return a + (b - a) * (def.time - def.frameA.time) / duration;
+    case ISAInterpolationKind.Bezier: {
+      const curve = def.frameA.interpolation;
+      const x = (def.time - def.frameA.time) / duration;
+      const t = solveBezier(x, 0, curve.x1, curve.x2, 1);
+      const y = bezier(t, 0, curve.y1, curve.y2, 1);
+      return a + (b - a) * y;
     }
   }
 }
