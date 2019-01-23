@@ -72,17 +72,6 @@ export class GLContext {
     mat4.identity(this.transform);
   }
 
-  public setBlendMode(mode: 'normal' | 'additive') {
-    switch (mode) {
-      case 'normal':
-        this.gl.blendFunc(this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
-        break;
-      case 'additive':
-        this.gl.blendFunc(this.gl.ONE, this.gl.ONE);
-        break;
-    }
-  }
-
   public loadTex(width: number, height: number, pixels: Buffer): WebGLTexture {
     const tex = this.gl.createTexture();
     if (!tex) {
@@ -99,7 +88,10 @@ export class GLContext {
     return tex;
   }
 
-  public drawTex(tex: WebGLTexture, positions: Float32Array, texCoords: Float32Array, tint = 0xffffffff) {
+  public drawTex(
+    tex: WebGLTexture, positions: Float32Array, texCoords: Float32Array,
+    tint = 0xffffffff, mode: 'normal' | 'additive' = 'normal',
+  ) {
     this.gl.bindTexture(this.gl.TEXTURE_2D, tex);
 
     const program = this.loadProgram('mesh.vert', 'mesh.frag');
@@ -125,8 +117,16 @@ export class GLContext {
     const transformLocation = this.gl.getUniformLocation(program, 'u_transform');
     this.gl.uniformMatrix4fv(transformLocation, false, transform);
 
-    const textureLocation = this.gl.getUniformLocation(program, 'u_texture');
-    this.gl.uniform1i(textureLocation, 0);
+    const additiveLocation = this.gl.getUniformLocation(program, 'u_additive');
+    this.gl.uniform1i(additiveLocation, Number(mode === 'additive'));
+    switch (mode) {
+      case 'normal':
+        this.gl.blendFunc(this.gl.ONE, this.gl.ONE_MINUS_SRC_ALPHA);
+        break;
+      case 'additive':
+        this.gl.blendFunc(this.gl.ONE, this.gl.ONE);
+        break;
+    }
 
     const tintLocation = this.gl.getUniformLocation(program, 'u_tint');
     this.gl.uniform4f(tintLocation,
@@ -135,6 +135,9 @@ export class GLContext {
       ((tint >>> 0) & 0xff) / 0xff,
       ((tint >>> 24) & 0xff) / 0xff,
     );
+
+    const textureLocation = this.gl.getUniformLocation(program, 'u_texture');
+    this.gl.uniform1i(textureLocation, 0);
 
     this.gl.drawArrays(this.gl.TRIANGLES, 0, positions.length / 2);
   }

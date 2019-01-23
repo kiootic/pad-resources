@@ -192,8 +192,11 @@ export class AnimatedRenderer extends Renderer {
       const texture = this.directives.has(`highlight:${mesh.id}`) ?
         this.context.WHITE :
         this.textures[mesh.textureId];
-      this.context.setBlendMode(slot.flags === 1 ? 'additive' : 'normal');
-      this.context.drawTex(texture, new Float32Array(positionBuf), new Float32Array(texCoordsBuf), tint);
+      this.context.drawTex(
+        texture,
+        new Float32Array(positionBuf), new Float32Array(texCoordsBuf),
+        tint, slot.flags === 1 ? 'additive' : 'normal',
+      );
     }
   }
 
