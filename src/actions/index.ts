@@ -1,15 +1,9 @@
-import { main as extract } from './extract';
-import { main as inspect } from './inspect';
-import { main as play } from './play';
-import { main as render } from './render';
-import { main as update } from './update';
-
 type Action = (args: string[]) => Promise<boolean>;
 
-export const actions: Record<string, Action> = {
-  update,
-  extract,
-  inspect,
-  render,
-  play,
+export const actionFactories: Record<string, () => Promise<Action>> = {
+  update: () => import('./update').then((m) => m.main),
+  extract: () => import('./extract').then((m) => m.main),
+  inspect: () => import('./inspect').then((m) => m.main),
+  render: () => import('./render').then((m) => m.main),
+  play: () => import('./play').then((m) => m.main),
 };

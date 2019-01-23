@@ -1,4 +1,4 @@
-import { actions } from './actions';
+import { actionFactories } from './actions';
 
 function usage() {
   console.log(`
@@ -11,11 +11,11 @@ usage: pad-resources update
 }
 
 async function main(args: string[]) {
-  const action = actions[args[0]];
-  if (!action) {
+  const actionFactory = actionFactories[args[0]];
+  if (!actionFactory) {
     return usage();
   } else {
-    return await action(args.slice(1));
+    return await (await actionFactory())(args.slice(1));
   }
 }
 
