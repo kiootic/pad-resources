@@ -7,6 +7,7 @@ function bezierD(t: number, a: number, b: number, c: number, d: number) {
 }
 
 export function solveBezier(x: number, a: number, b: number, c: number, d: number) {
+  if (bezier(x, a, b, c, d) === x) return x;
   let t = x;
   t -= (bezier(t, a, b, c, d) - x) / bezierD(t, a, b, c, d);
   t -= (bezier(t, a, b, c, d) - x) / bezierD(t, a, b, c, d);
