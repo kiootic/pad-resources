@@ -1,10 +1,7 @@
-import { spawnSync } from 'child_process';
-import { mkdtempSync, readFileSync, writeFileSync } from 'fs';
+import { spawn } from 'child_process';
+import { readFileSync, writeFileSync } from 'fs';
 import gl from 'gl';
 import minimist from 'minimist';
-import { tmpdir } from 'os';
-import { join } from 'path';
-import { sync as rimraf } from 'rimraf';
 import { BBIN } from '../models/bbin';
 import { Extlist } from '../models/extlist';
 import { TEX } from '../models/tex';
@@ -39,7 +36,7 @@ export async function main(args: string[]) {
     return false;
   }
 
-  let time = typeof parsedArgs.time === 'number' ? parsedArgs.time : 0;
+  const time = typeof parsedArgs.time === 'number' ? parsedArgs.time : 0;
   const video = !!parsedArgs.video;
   const nobg = !!parsedArgs.nobg;
 
@@ -70,24 +67,48 @@ export async function main(args: string[]) {
 
   let outBuf: Buffer;
   if (video) {
-    const animationLength = renderer.timeLength;
-    const framesDir = mkdtempSync(join(tmpdir(), 'pad-'));
-    let i;
-    for (i = 0, time = 0; time < animationLength; time += (1 / 30), i++) {
-      console.log(`${Math.round(time * 100) / 100}/${Math.round(animationLength * 100) / 100}`);
-      await renderer.draw(time);
-      const frame = await renderer.finalize();
-      writeFileSync(join(framesDir, `${i}.png`), frame);
-    }
-    outBuf = spawnSync('ffmpeg', [
+    const lastFrame = Math.ceil(renderer.timeLength / (1 / 30));
+    const ffmpeg = spawn('ffmpeg', [
       '-framerate', '30',
-      '-i', join(framesDir, '%d.png'),
+      '-i', '-',
       '-c:v', 'libvpx-vp9',
+      '-tile-columns', '6', '-frame-parallel', '1',
       '-lossless', '1',
+      '-speed', '8',
+      '-threads', '8',
       '-f', 'webm',
+      '-r', '100',
+      '-vsync', 'cfr',
+      '-t', renderer.timeLength.toFixed(2),
       '-',
-    ], { encoding: 'buffer', stdio: ['inherit', 'pipe', 'inherit'] }).stdout;
-    rimraf(framesDir);
+    ], { stdio: ['pipe', 'pipe', 'inherit'] });
+
+    const buffers: Buffer[] = [];
+    ffmpeg.stdout.on('data', (data) => {
+      buffers.push(data as Buffer);
+    });
+
+    const renderProcess = new Promise((resolve) => {
+      let i = 0;
+      const renderFrame = async () => {
+        const frameTime = Math.min(i / 30, renderer.timeLength);
+        await renderer.draw(frameTime);
+        const frame = await renderer.finalize('png-fast');
+        i++;
+        ffmpeg.stdin.write(frame, async () => {
+          if (i < lastFrame) {
+            await renderFrame();
+          } else {
+            ffmpeg.stdin.end();
+            ffmpeg.once('close', () => resolve());
+          }
+        });
+      };
+      renderFrame();
+    });
+
+    await renderProcess;
+    outBuf = Buffer.concat(buffers);
   } else {
     await renderer.draw(time);
     outBuf = await renderer.finalize();

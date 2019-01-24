@@ -142,7 +142,7 @@ export class GLContext {
     this.gl.drawArrays(this.gl.TRIANGLES, 0, positions.length / 2);
   }
 
-  public async finalize(format: 'png' | 'webp' = 'png'): Promise<Buffer> {
+  public async finalize(format: 'png' | 'png-fast' = 'png'): Promise<Buffer> {
     const pixels = new Buffer(this.width * this.height * 4);
     this.gl.readPixels(
       0, 0,
@@ -159,15 +159,15 @@ export class GLContext {
             height: this.height,
             channels: 4,
           },
-        }).png({ compressionLevel: 0 }).toBuffer();
-      case 'webp':
+        }).png().toBuffer();
+      case 'png-fast':
         return await Sharp(pixels, {
           raw: {
             width: this.width,
             height: this.height,
             channels: 4,
           },
-        }).webp().toBuffer();
+        }).png({ compressionLevel: 0 }).toBuffer();
       default:
         throw new Error('unknown format');
     }

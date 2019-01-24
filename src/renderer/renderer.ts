@@ -44,8 +44,8 @@ export abstract class Renderer {
     );
   }
 
-  public finalize() {
-    return this.context.finalize();
+  public finalize(format: 'png' | 'png-fast' = 'png') {
+    return this.context.finalize(format);
   }
 
   public async draw(time: number): Promise<void> {
