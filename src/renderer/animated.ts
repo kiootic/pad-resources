@@ -49,7 +49,7 @@ function interpolate(def: InterpolationDef, a: number, b: number) {
 }
 
 interface SlotAnimation {
-  tint: number;
+  tint?: number;
   skinName?: string;
 }
 
@@ -234,7 +234,7 @@ export class AnimatedRenderer extends Renderer {
   private animateSlots(time: number) {
     const slotTints = new Map<number, SlotAnimation>();
     for (const slot of this.isa.slots) {
-      let tint = 0xffffffff;
+      let tint: number | undefined;
       let skinName: string | undefined;
 
       if (slot.tint) {
@@ -337,7 +337,7 @@ export class AnimatedRenderer extends Renderer {
       let b = (slot.tint >>> 0) & 0xff;
 
       const animatedSlot = animatedTints.get(slot.id);
-      if (animatedSlot) {
+      if (animatedSlot && typeof animatedSlot.tint !== 'undefined') {
         const alpha = (animatedSlot.tint >>> 24) / 0xff;
         a = animatedSlot.tint >>> 24;
         r = Math.floor(blend(r, (animatedSlot.tint >>> 16) & 0xff, alpha));
