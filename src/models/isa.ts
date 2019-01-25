@@ -80,7 +80,7 @@ export interface ISAFrameVertex {
 
 export interface ISAFrameAttachment {
   kind: ISAFrameKind.Attachment;
-  skinName: string;
+  name: string;
 }
 
 export interface ISAFramePoints {
@@ -169,7 +169,7 @@ function readAnimation(buf: Buffer, offset: number): ISAAnimation | null {
       case ISAFrameKind.Attachment:
         frame = {
           kind: frameKind,
-          skinName: readASCII(buf, pos + 0x10),
+          name: readASCII(buf, pos + 0x10),
         };
         pos += 0x20;
         break;

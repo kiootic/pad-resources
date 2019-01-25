@@ -1,7 +1,7 @@
 import { mat2d, vec2 } from 'gl-matrix';
 import { BBIN } from '../models/bbin';
 import { ISA, ISAAnimation, ISAFrameKind, ISAInterpolationKind, ISAKeyFrame } from '../models/isa';
-import { ISC, ISCBone } from '../models/isc';
+import { ISC, ISCBone, ISCMesh } from '../models/isc';
 import { Transform, Vec2 } from '../models/math';
 import { TEX } from '../models/tex';
 import { bezier, solveBezier } from './bezier';
@@ -49,7 +49,7 @@ function interpolate(def: InterpolationDef, a: number, b: number) {
 
 interface SlotAnimation {
   tint?: number;
-  skinName?: string;
+  attachmentName?: string;
 }
 
 export class AnimatedRenderer extends Renderer {
@@ -136,13 +136,18 @@ export class AnimatedRenderer extends Renderer {
     const tints = this.computeTints(animatedSlots);
 
     for (const slot of this.isc.slots) {
-      const { skinName } = animatedSlots.get(slot.id) || { skinName: undefined };
-      const skin = typeof skinName === 'undefined' ?
-        this.isc.skins[slot.skinId] :
-        this.isc.skins.find((s) => s.name === skinName);
-      if (!skin) continue;
+      let mesh: ISCMesh;
 
-      const mesh = this.isc.meshs[skin.meshId];
+      const { attachmentName } = animatedSlots.get(slot.id) || { attachmentName: undefined };
+      if (typeof attachmentName === 'undefined') {
+        const skin = this.isc.skins[slot.skinId];
+        if (!skin) continue;
+        mesh = this.isc.meshs[skin.meshId];
+      } else {
+        const attachment = this.isc.meshs.find((s) => s.name === attachmentName);
+        if (!attachment) continue;
+        mesh = attachment;
+      }
 
       let tint = tints.get(slot.id);
       if (tint === undefined) {
@@ -234,7 +239,7 @@ export class AnimatedRenderer extends Renderer {
     const slotTints = new Map<number, SlotAnimation>();
     for (const slot of this.isa.slots) {
       let tint: number | undefined;
-      let skinName: string | undefined;
+      let attachmentName: string | undefined;
 
       if (slot.tint) {
         const def = findKeyFrames(slot.tint, time, this.animationLength);
@@ -252,10 +257,10 @@ export class AnimatedRenderer extends Renderer {
         const def = findKeyFrames(slot.attachment, time, this.animationLength);
         if (def.frameA.frame.kind !== ISAFrameKind.Attachment || def.frameB.frame.kind !== ISAFrameKind.Attachment)
           throw new Error('unexpected frame kind');
-        skinName = def.frameA.frame.skinName;
+        attachmentName = def.frameA.frame.name;
       }
 
-      slotTints.set(slot.id, { tint, skinName });
+      slotTints.set(slot.id, { tint, attachmentName });
     }
     return slotTints;
   }
