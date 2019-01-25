@@ -28,7 +28,6 @@ export class SimpleRenderer extends Renderer {
     const width = this.entry.width / this.texInfo.width;
     const height = this.entry.height / this.texInfo.height;
 
-    this.context.setBlendMode('normal');
     this.context.drawTex(
       this.tex,
       GLContext.makeQuad(
