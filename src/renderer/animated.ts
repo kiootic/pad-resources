@@ -244,9 +244,9 @@ export class AnimatedRenderer extends Renderer {
         const b = def.frameB.frame.color;
         tint =
           Math.floor(interpolate(def, (a >>> 24) & 0xff, (b >>> 24) & 0xff)) * 0x1000000 +
-          Math.floor(interpolate(def, (a >>> 16) & 0xff, (b >>> 16) & 0xff)) * 0x10000 +
+          Math.floor(interpolate(def, (a >>> 0) & 0xff, (b >>> 0) & 0xff)) * 0x10000 +
           Math.floor(interpolate(def, (a >>> 8) & 0xff, (b >>> 8) & 0xff)) * 0x100 +
-          Math.floor(interpolate(def, (a >>> 0) & 0xff, (b >>> 0) & 0xff)) * 0x1;
+          Math.floor(interpolate(def, (a >>> 16) & 0xff, (b >>> 16) & 0xff)) * 0x1;
       }
       if (slot.attachment) {
         const def = findKeyFrames(slot.attachment, time, this.animationLength);
