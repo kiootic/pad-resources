@@ -4,6 +4,7 @@ import { padStart } from 'lodash';
 import { join } from 'path';
 import { BC } from '../models/bc';
 import { ExtlistEntry } from '../models/extlist';
+import { TEX } from '../models/tex';
 
 function extractETag(etag: string) {
   return /^(?:W\/)?"([^"]+)"$/.exec(etag)![1];
@@ -34,5 +35,20 @@ export async function downloadBc(
   await writeFileSync(join(bcPath, `${key}.bc`), data);
 
   const bc = BC.load(data);
-  await writeFileSync(join(binPath, `${key}.bin`), bc.data);
+  let binData = bc.data;
+  if (TEX.match(binData)) {
+    // upgrade TEX1 to TEX2 for simpler rendering
+    const tex = TEX.load(binData);
+    if (!tex.info) {
+      tex.info = {
+        cardWidth: entry.width,
+        cardHeight: entry.height,
+        numFrames: entry.numFrames,
+        frameRate: entry.frameRate,
+      };
+    }
+    binData = TEX.save(tex);
+  }
+
+  await writeFileSync(join(binPath, `${key}.bin`), binData);
 }

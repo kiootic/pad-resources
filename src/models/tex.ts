@@ -1,8 +1,9 @@
-import { range } from 'lodash';
+import { range, sum } from 'lodash';
 import Sharp from 'sharp';
 
 export interface TEX {
   entries: TEXEntry[];
+  info: TEXCardInfo | null;
 }
 
 export interface TEXEntry {
@@ -11,6 +12,13 @@ export interface TEXEntry {
   height: number;
   name: string;
   data: Buffer;
+}
+
+export interface TEXCardInfo {
+  cardWidth: number;
+  cardHeight: number;
+  numFrames: number;
+  frameRate: number;
 }
 
 export enum TEXEncoding {
@@ -94,7 +102,60 @@ export const TEX = {
         data,
       });
     }
-    return { entries };
+
+    const infoOffset = buf.readUInt32LE(8);
+    let info: TEXCardInfo | null = null;
+    if (infoOffset !== 0) {
+      const cardWidth = buf.readUInt16LE(infoOffset + 8);
+      const cardHeight = buf.readUInt16LE(infoOffset + 10);
+      const numFrames = buf.readUInt16LE(infoOffset + 12);
+      const frameRate = buf.readUInt16LE(infoOffset + 14);
+      info = { cardWidth, cardHeight, numFrames, frameRate };
+    }
+
+    return { entries, info };
+  },
+  save(tex: TEX): Buffer {
+    const size = 0x10 +
+      sum(tex.entries.map((entry) => entry.data.length + 0x20)) +
+      (tex.info ? 0x10 : 0);
+    const buf = new Buffer(size);
+    let offset = 0;
+
+    buf.writeUInt32LE(0x32584554, offset + 0);
+    buf.writeUInt32LE(tex.entries.length, offset + 4);
+    buf.writeUInt32LE(tex.info ? (size - 0x10) : 0, offset + 8);
+    buf.writeUInt32LE(tex.info ? 1 : 0, offset + 12);
+    offset += 0x10;
+
+    for (const entry of tex.entries) {
+      buf.writeUInt32LE(offset + 0x20, offset + 0);
+
+      let flags = 0;
+      flags |= (entry.width & 0xfff) << 0;
+      flags |= (entry.height & 0xfff) << 16;
+      flags |= (entry.encoding & 0xf) << 12;
+      flags |= (entry.width & 0xfff) << 0;
+      buf.writeUInt32LE(flags, offset + 4);
+
+      buf.write(entry.name, offset + 8, 28);
+      if (entry.encoding === TEXEncoding.RAW) {
+        buf.writeUInt32LE(entry.data.length, offset + 28);
+      }
+      entry.data.copy(buf, offset + 0x20);
+
+      offset += 0x20 + entry.data.length;
+    }
+
+    if (tex.info) {
+      buf.writeUInt16LE(0xffff, offset + 0);
+      buf.writeUInt16LE(tex.info.cardWidth, offset + 8);
+      buf.writeUInt16LE(tex.info.cardHeight, offset + 10);
+      buf.writeUInt16LE(tex.info.numFrames, offset + 12);
+      buf.writeUInt16LE(tex.info.frameRate, offset + 14);
+    }
+
+    return buf;
   },
   decodeRaw(entry: TEXEntry): Buffer {
     const pixBuf = Buffer.alloc(entry.width * entry.height * 4);
