@@ -7,12 +7,15 @@ function bezierD(t: number, a: number, b: number, c: number, d: number) {
 }
 
 export function solveBezier(x: number, a: number, b: number, c: number, d: number) {
-  if (bezier(x, a, b, c, d) === x) return x;
-  let t = x;
-  t -= (bezier(t, a, b, c, d) - x) / bezierD(t, a, b, c, d);
-  t -= (bezier(t, a, b, c, d) - x) / bezierD(t, a, b, c, d);
-  t -= (bezier(t, a, b, c, d) - x) / bezierD(t, a, b, c, d);
-  t -= (bezier(t, a, b, c, d) - x) / bezierD(t, a, b, c, d);
-  t -= (bezier(t, a, b, c, d) - x) / bezierD(t, a, b, c, d);
+  let lo = 0;
+  let hi = 1;
+  let t = 0.5;
+  do {
+    t = (lo + hi) / 2;
+    const tx = bezier(t, a, b, c, d);
+    const dtx = bezierD(t, a, b, c, d);
+    if ((tx > x) === (dtx > 0)) hi = t;
+    else lo = t;
+  } while (hi - lo > 1e-8);
   return t;
 }
