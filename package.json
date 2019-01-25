@@ -15,7 +15,12 @@
   },
   "scripts": {
     "start": "ts-node .",
-    "lint": "tslint -p ."
+    "lint": "tslint -p .",
+    "update": "ts-node . update",
+    "extract": "ts-node . extract",
+    "inspect": "ts-node . inspect",
+    "render": "ts-node . render",
+    "play": "ts-node . play"
   },
   "dependencies": {
     "@types/gl": "^4.1.0",
