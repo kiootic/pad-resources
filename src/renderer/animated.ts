@@ -9,38 +9,37 @@ import { Renderer } from './renderer';
 
 function findKeyFrames(animation: ISAAnimation, time: number, totalTime: number): InterpolationDef {
   let nextFrameIndex = animation.frames.findIndex((frame) => frame.time > time);
-  if (nextFrameIndex < 0) nextFrameIndex = animation.frames.length;
+  if (nextFrameIndex < 0) {
+    nextFrameIndex = 0;
+  }
+  const thisFrameIndex = (nextFrameIndex - 1 + animation.frames.length) % animation.frames.length;
 
-  const thisFrame = animation.frames[(nextFrameIndex - 1 + animation.frames.length) % animation.frames.length];
-  const nextFrame = animation.frames[nextFrameIndex] || animation.frames[0];
-  return {
-    time, totalTime,
-    frameA: thisFrame,
-    frameB: nextFrame,
-  };
+  const thisFrame = animation.frames[thisFrameIndex];
+  const nextFrame = animation.frames[nextFrameIndex];
+
+  let duration = nextFrame.time - thisFrame.time;
+  if (duration <= 0) duration += totalTime;
+  const percent = ((time - thisFrame.time + totalTime) % totalTime) / duration;
+
+  return { percent, frameA: thisFrame, frameB: nextFrame };
 }
 
 interface InterpolationDef {
-  time: number;
-  totalTime: number;
+  percent: number;
   frameA: ISAKeyFrame;
   frameB: ISAKeyFrame;
 }
 
 function interpolate(def: InterpolationDef, a: number, b: number) {
-  let duration = def.frameB.time - def.frameA.time;
-  if (duration < 0) duration += def.totalTime;
-  if (duration === 0) return a;
-
   switch (def.frameA.interpolation.kind) {
     default:
     case ISAInterpolationKind.Constant:
       return a;
     case ISAInterpolationKind.Linear:
-      return a + (b - a) * (def.time - def.frameA.time) / duration;
+      return a + (b - a) * def.percent;
     case ISAInterpolationKind.Bezier: {
       const curve = def.frameA.interpolation;
-      const x = (def.time - def.frameA.time) / duration;
+      const x = def.percent;
       const t = solveBezier(x, 0, curve.x1, curve.x2, 1);
       const y = bezier(t, 0, curve.y1, curve.y2, 1);
       return a + (b - a) * y;
