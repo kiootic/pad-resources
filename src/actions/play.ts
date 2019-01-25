@@ -4,38 +4,25 @@ import minimist from 'minimist';
 import { emitKeypressEvents, Key } from 'readline';
 import gl from 'wpe-webgl';
 import { BBIN } from '../models/bbin';
-import { Extlist } from '../models/extlist';
 import { TEX } from '../models/tex';
 import { AnimatedRenderer } from '../renderer/animated';
 import { Renderer } from '../renderer/renderer';
 import { SimpleRenderer } from '../renderer/simple';
 
 function usage() {
-  console.log('usage: pad-resources play --extlist <extlist bin> --id <id> --bin <bin file>');
+  console.log('usage: pad-resources play --bin <bin file>');
 }
 
 interface Args {
-  extlist: any;
-  id: any;
   bin: any;
-  out: any;
 }
 
 export async function main(args: string[]) {
   const parsedArgs = minimist(args) as any as Args;
   if (
-    typeof parsedArgs.extlist !== 'string' ||
-    typeof parsedArgs.id !== 'number' ||
     typeof parsedArgs.bin !== 'string'
   ) {
     usage();
-    return false;
-  }
-
-  const extlist = Extlist.load(readFileSync(parsedArgs.extlist));
-  const entry = extlist.entries.find((e) => !e.isCards && e.id === Number(parsedArgs.id));
-  if (!entry) {
-    console.error('entry not found');
     return false;
   }
 
@@ -43,7 +30,7 @@ export async function main(args: string[]) {
   let renderer: Renderer;
   const context = gl.init({ width: Renderer.ImageSize, height: Renderer.ImageSize });
   if (TEX.match(buf)) {
-    renderer = new SimpleRenderer(context, entry, buf);
+    renderer = new SimpleRenderer(context, buf);
   } else if (BBIN.match(buf)) {
     renderer = new AnimatedRenderer(context, buf);
   } else {

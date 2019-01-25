@@ -1,38 +1,42 @@
-import { ExtlistEntry } from '../models/extlist';
-import { TEX, TEXEntry } from '../models/tex';
+import { TEX, TEXCardInfo, TEXEntry } from '../models/tex';
 import { GLContext } from './gl-context';
 import { Renderer } from './renderer';
 
 export class SimpleRenderer extends Renderer {
-  private readonly tex: WebGLTexture;
-  private readonly texInfo: TEXEntry;
+  private readonly glTex: WebGLTexture;
+  private readonly cardInfo: TEXCardInfo;
+  private readonly texEntry: TEXEntry;
 
   public get timeLength(): number {
-    const timePerFrame = (this.entry.frameRate || 1) / 30;
-    const numFrames = this.entry.numFrames || 1;
+    const timePerFrame = (this.cardInfo.frameRate || 1) / 30;
+    const numFrames = this.cardInfo.numFrames || 1;
     return numFrames * timePerFrame;
   }
 
-  constructor(gl: WebGLRenderingContext, private readonly entry: ExtlistEntry, buf: Buffer) {
+  constructor(gl: WebGLRenderingContext, buf: Buffer) {
     super(gl);
-    const texInfo = TEX.load(buf).entries[0];
-    const imageBuf = TEX.decodeRaw(texInfo);
-    this.tex = this.context.loadTex(texInfo.width, texInfo.height, imageBuf);
-    this.texInfo = texInfo;
+    const tex = TEX.load(buf);
+    if (!tex.info || tex.entries.length === 0)
+      throw new Error('missing required data');
+    this.cardInfo = tex.info;
+    this.texEntry = tex.entries[0];
+
+    const imageBuf = TEX.decodeRaw(this.texEntry);
+    this.glTex = this.context.loadTex(this.texEntry.width, this.texEntry.height, imageBuf);
   }
 
   public async doDraw(time: number) {
-    const timePerFrame = (this.entry.frameRate / 30) || 1;
-    const numFrames = this.entry.numFrames || 1;
+    const timePerFrame = (this.cardInfo.frameRate / 30) || 1;
+    const numFrames = this.cardInfo.numFrames || 1;
     const frame = Math.floor(time / timePerFrame) % numFrames;
-    const width = this.entry.width / this.texInfo.width;
-    const height = this.entry.height / this.texInfo.height;
+    const width = this.cardInfo.cardWidth / this.texEntry.width;
+    const height = this.cardInfo.cardHeight / this.texEntry.height;
 
     this.context.drawTex(
-      this.tex,
+      this.glTex,
       GLContext.makeQuad(
-        -this.entry.width / 2, -this.entry.height,
-        this.entry.width, this.entry.height,
+        -this.cardInfo.cardWidth / 2, -this.cardInfo.cardHeight,
+        this.cardInfo.cardWidth, this.cardInfo.cardHeight,
       ),
       GLContext.makeQuad(0, height * frame, width, height),
     );

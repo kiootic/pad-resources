@@ -3,7 +3,6 @@ import { readFileSync, writeFileSync } from 'fs';
 import gl from 'gl';
 import minimist from 'minimist';
 import { BBIN } from '../models/bbin';
-import { Extlist } from '../models/extlist';
 import { TEX } from '../models/tex';
 import { AnimatedRenderer } from '../renderer/animated';
 import { Renderer } from '../renderer/renderer';
@@ -11,12 +10,10 @@ import { SimpleRenderer } from '../renderer/simple';
 
 function usage() {
   // tslint:disable-next-line:max-line-length
-  console.log('usage: pad-resources render --extlist <extlist bin> --id <id> --bin <bin file> --out <out file> [--time <time>] [--video] [--nobg]');
+  console.log('usage: pad-resources render --bin <bin file> --out <out file> [--time <time>] [--video] [--nobg]');
 }
 
 interface Args {
-  extlist: any;
-  id: any;
   bin: any;
   out: any;
   time?: number;
@@ -27,8 +24,6 @@ interface Args {
 export async function main(args: string[]) {
   const parsedArgs = minimist(args) as any as Args;
   if (
-    typeof parsedArgs.extlist !== 'string' ||
-    typeof parsedArgs.id !== 'number' ||
     typeof parsedArgs.bin !== 'string' ||
     typeof parsedArgs.out !== 'string'
   ) {
@@ -40,13 +35,6 @@ export async function main(args: string[]) {
   const video = !!parsedArgs.video;
   const nobg = !!parsedArgs.nobg;
 
-  const extlist = Extlist.load(readFileSync(parsedArgs.extlist));
-  const entry = extlist.entries.find((e) => !e.isCards && e.id === Number(parsedArgs.id));
-  if (!entry) {
-    console.error('entry not found');
-    return false;
-  }
-
   const buf = readFileSync(parsedArgs.bin);
   let renderer: Renderer;
   const context = gl(Renderer.ImageSize, Renderer.ImageSize, {
@@ -55,7 +43,7 @@ export async function main(args: string[]) {
     preserveDrawingBuffer: true,
   });
   if (TEX.match(buf)) {
-    renderer = new SimpleRenderer(context, entry, buf);
+    renderer = new SimpleRenderer(context, buf);
   } else if (BBIN.match(buf)) {
     renderer = new AnimatedRenderer(context, buf);
   } else {
