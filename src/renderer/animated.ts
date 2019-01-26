@@ -101,10 +101,6 @@ export class AnimatedRenderer extends Renderer {
       );
     }
 
-    for (const slot of this.isc.slots) {
-      const tint = ((slot.tint & 0xff) << 16) | (slot.tint & 0xff00) | ((slot.tint & 0xff0000) >> 16);
-      slot.tint = tint;
-    }
     for (const slot of this.isa.slots) {
       animationLength = Math.max(animationLength,
         slot.tint ? slot.tint.timeLength : 0,
@@ -249,9 +245,9 @@ export class AnimatedRenderer extends Renderer {
         const b = def.frameB.frame.color;
         tint =
           Math.floor(interpolate(def, (a >>> 24) & 0xff, (b >>> 24) & 0xff)) * 0x1000000 +
-          Math.floor(interpolate(def, (a >>> 0) & 0xff, (b >>> 0) & 0xff)) * 0x10000 +
+          Math.floor(interpolate(def, (a >>> 16) & 0xff, (b >>> 16) & 0xff)) * 0x10000 +
           Math.floor(interpolate(def, (a >>> 8) & 0xff, (b >>> 8) & 0xff)) * 0x100 +
-          Math.floor(interpolate(def, (a >>> 16) & 0xff, (b >>> 16) & 0xff)) * 0x1;
+          Math.floor(interpolate(def, (a >>> 0) & 0xff, (b >>> 0) & 0xff)) * 0x1;
       }
       if (slot.attachment) {
         const def = findKeyFrames(slot.attachment, time, this.animationLength);
@@ -330,23 +326,18 @@ export class AnimatedRenderer extends Renderer {
   private computeTints(animatedTints: Map<number, SlotAnimation>) {
     const computedTints = new Map<number, number>();
 
-    function blend(dst: number, src: number, alpha: number) {
-      return src * alpha + dst * (1 - alpha);
-    }
-
     for (const slot of this.isc.slots) {
-      let a = 0xff;
-      let r = (slot.tint >>> 16) & 0xff;
+      let a = (slot.tint >>> 24) & 0xff;
+      let r = (slot.tint >>> 0) & 0xff;
       let g = (slot.tint >>> 8) & 0xff;
-      let b = (slot.tint >>> 0) & 0xff;
+      let b = (slot.tint >>> 16) & 0xff;
 
       const animatedSlot = animatedTints.get(slot.id);
       if (animatedSlot && typeof animatedSlot.tint !== 'undefined') {
-        const alpha = (animatedSlot.tint >>> 24) / 0xff;
-        a = animatedSlot.tint >>> 24;
-        r = Math.floor(blend(r, (animatedSlot.tint >>> 16) & 0xff, alpha));
-        g = Math.floor(blend(g, (animatedSlot.tint >>> 8) & 0xff, alpha));
-        b = Math.floor(blend(b, (animatedSlot.tint >>> 0) & 0xff, alpha));
+        a = (animatedSlot.tint >>> 24) & 0xff;
+        r = (animatedSlot.tint >>> 0) & 0xff;
+        g = (animatedSlot.tint >>> 8) & 0xff;
+        b = (animatedSlot.tint >>> 16) & 0xff;
       }
 
       const tint = a * 0x1000000 + r * 0x10000 + g * 0x100 + b * 0x1;
