@@ -7,6 +7,7 @@ import { TEX } from '../models/tex';
 import { AnimatedRenderer } from '../renderer/animated';
 import { Renderer } from '../renderer/renderer';
 import { SimpleRenderer } from '../renderer/simple';
+import { join } from 'path';
 
 function usage() {
   // tslint:disable-next-line:max-line-length
@@ -56,20 +57,12 @@ export async function main(args: string[]) {
   let outBuf: Buffer;
   if (video) {
     const lastFrame = Math.ceil(renderer.timeLength / (1 / 30));
-    const ffmpeg = spawn('ffmpeg', [
-      '-framerate', '30',
-      '-i', '-',
-      '-c:v', 'libvpx-vp9',
-      '-tile-columns', '6', '-frame-parallel', '1',
-      '-lossless', '1',
-      '-speed', '8',
-      '-threads', '8',
-      '-f', 'webm',
-      '-r', '100',
-      '-vsync', 'cfr',
-      '-t', renderer.timeLength.toFixed(2),
-      '-',
-    ], { stdio: ['pipe', 'pipe', 'inherit'] });
+    const ffmpegArgs = readFileSync(join(__dirname, 'ffmpeg.txt'))
+      .toString()
+      .split(/ |\n/g)
+      .filter((arg) => arg.length > 0)
+      .map((arg) => arg.replace('%TIME', renderer.timeLength.toFixed(3)));
+    const ffmpeg = spawn('ffmpeg', ffmpegArgs, { stdio: ['pipe', 'pipe', 'inherit'] });
 
     const buffers: Buffer[] = [];
     ffmpeg.stdout.on('data', (data) => {

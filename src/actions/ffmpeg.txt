@@ -1,0 +1,13 @@
+-framerate 30
+-i -
+-c:v libvpx-vp9
+-tile-columns 6
+-frame-parallel 1
+-lossless 1
+-speed 8
+-threads 8
+-f webm
+-r 100
+-vsync cfr
+-t  %TIME
+-
