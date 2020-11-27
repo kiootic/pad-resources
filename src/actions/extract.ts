@@ -1,10 +1,14 @@
 import { readFileSync, writeFileSync } from 'fs';
 import { glob } from 'glob';
 import minimist from 'minimist';
-import { join } from 'path';
+import { basename, extname, join } from 'path';
+import sharp from 'sharp';
 import { BBIN } from '../models/bbin';
 import { ISA } from '../models/isa';
 import { ISC } from '../models/isc';
+import { loadISA, loadISC } from '../models/spine';
+import { SpineAtlas } from '../models/spine-atlas';
+import { SpineSkeleton } from '../models/spine-skeleton';
 import { TEX } from '../models/tex';
 
 function writeFile(out: string | undefined, name: string, data: Buffer) {
@@ -25,20 +29,75 @@ async function extract(buf: Buffer, out: string | undefined) {
     }
   } else if (BBIN.match(buf)) {
     const bbin = BBIN.load(buf);
+    const images = new Map<string, Buffer>();
+    let isc: ISC | null = null;
+    const isas: ISA[] = [];
     for (const file of bbin.files) {
-      await extract(file, out);
+      if (TEX.match(file)) {
+        const tex = TEX.load(file);
+        for (const entry of tex.entries) {
+          const image = await TEX.decode(entry);
+          images.set(entry.name, image);
+        }
+      } else if (ISC.match(file)) {
+        isc = ISC.load(file);
+      } else if (ISA.match(file)) {
+        isas.push(ISA.load(file));
+      }
     }
-  } else if (ISC.match(buf)) {
-    const isc = ISC.load(buf);
-    const fileName = isc.name.substring(isc.name.lastIndexOf('/') + 1);
-    console.log(fileName);
-    writeFile(out, fileName, buf);
-  } else if (ISA.match(buf)) {
-    const isa = ISA.load(buf);
-    const fileName = isa.name.substring(isa.name.lastIndexOf('/') + 1);
-    console.log(fileName);
-    writeFile(out, fileName, buf);
+    if (isc) {
+      await convertSpineModel(isc, isas, images, out);
+    }
   }
+}
+
+async function convertSpineModel(isc: ISC, isas: ISA[], images: Map<string, Buffer>, out: string | undefined) {
+  const name = basename(isc.name, extname(isc.name));
+
+  const atlas: SpineAtlas = { images: [] };
+  for (const [name, data] of images.entries()) {
+    const meta = await sharp(data).metadata();
+    atlas.images.push({
+      name, data,
+      width: meta.width ?? 0,
+      height: meta.height ?? 0,
+      regions: [{
+        name,
+        x: 0,
+        y: 0,
+        width: meta.width ?? 0,
+        height: meta.height ?? 0,
+      }]
+    });
+  }
+
+  const skeleton: SpineSkeleton = {
+    skeleton: {},
+    bones: [],
+    slots: [],
+    skins: [],
+    animations: {},
+    __attachments: {},
+  };
+  loadISC(isc, skeleton, atlas);
+  for (const isa of isas) {
+    let isaName = basename(isa.name, extname(isa.name));
+    if (isa === isas[0]) {
+      isaName = "animation";
+    } else if (isaName.startsWith(name + "_")) {
+      isaName = isaName.substring(name.length + 1);
+    }
+    loadISA(isaName, isc, isa, skeleton);
+  }
+
+  for (const [name, data] of images) {
+    console.log(name);
+    writeFile(out, name, data);
+  }
+  console.log(`${name}.json`);
+  writeFile(out, `${name}.json`, Buffer.from(JSON.stringify(skeleton, null, 2)));
+  console.log(`${name}.atlas`);
+  writeFile(out, `${name}.atlas`, SpineAtlas.export(atlas));
 }
 
 interface Args {
