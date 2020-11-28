@@ -103,7 +103,8 @@ export function loadISC(isc: ISC, skeleton: SpineSkeleton, atlas: SpineAtlas) {
     }
     for (const [id, mesh] of meshs.entries()) {
         if (!used.has(id)) {
-        skeleton.__attachments[mesh.name] = translateMesh(mesh);
+            skeleton.__attachments[mesh.name] = translateMesh(mesh);
+        }
     }
 }
 
