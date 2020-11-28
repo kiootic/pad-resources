@@ -89,9 +89,10 @@ export function loadISC(isc: ISC, skeleton: SpineSkeleton, atlas: SpineAtlas) {
     }
 
     const meshs = new Map(isc.meshs.map(m => [m.id, m]));
+    const used = new Set<number>();
     for (const skin of isc.skins) {
         const mesh = meshs.get(skin.meshId)!;
-        meshs.delete(skin.meshId);
+        used.add(skin.meshId);
 
         const attachment = translateMesh(mesh);
 
@@ -100,7 +101,8 @@ export function loadISC(isc: ISC, skeleton: SpineSkeleton, atlas: SpineAtlas) {
         }
         s.attachments[skin.name][mesh.name] = attachment;
     }
-    for (const mesh of meshs.values()) {
+    for (const [id, mesh] of meshs.entries()) {
+        if (!used.has(id)) {
         skeleton.__attachments[mesh.name] = translateMesh(mesh);
     }
 }
