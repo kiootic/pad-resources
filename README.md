@@ -5,15 +5,23 @@ P&D card image renderer
 Requirement
 -----------
 - Node 8 & Yarn
-- For rendering video: ffmpeg
 
 Usage
 -----
 ```sh
 yarn update  # download image data from server
-yarn play --bin mons_4413.bin  # play animation in a window
-yarn render --bin mons_4229.bin --out 4229.webm --video --nobg  # render animation as video
+yarn extract --out data/HT/out data/HT/bin/mons_5203.bin # extract image data from a data file
 ```
+
+Rendering
+---------
+For simple cards, `yarn extract` output a simple PNG. For animated cards,
+`yarn extract` outputs Spine data JSON and atlas data. You can render them
+using any Spine-compatible renderer.
+
+As an example, a web renderer is provided at `/renderer` directory of the repo.
+Note that usage of the web player is subjected to respective licenses of Spine
+runtime.
 
 License
 -------
