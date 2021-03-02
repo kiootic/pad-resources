@@ -69,7 +69,7 @@ export async function main(args: string[]) {
       buffers.push(data as Buffer);
     });
 
-    const renderProcess = new Promise((resolve) => {
+    const renderProcess = new Promise<void>((resolve) => {
       let i = 0;
       const renderFrame = async () => {
         const frameTime = Math.min(i / 30, renderer.timeLength);

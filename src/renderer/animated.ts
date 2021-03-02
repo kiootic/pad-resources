@@ -174,19 +174,22 @@ export class AnimatedRenderer extends Renderer {
       const positionBuf: number[] = [];
       const texCoordsBuf: number[] = [];
       for (const [a, b, c] of mesh.triangleList) {
-        positionBuf.push(positions[a][0]);
-        positionBuf.push(positions[a][1]);
-        positionBuf.push(positions[b][0]);
-        positionBuf.push(positions[b][1]);
-        positionBuf.push(positions[c][0]);
-        positionBuf.push(positions[c][1]);
+        if (positions.length != 0)
+        {
+          positionBuf.push(positions[a][0]);
+          positionBuf.push(positions[a][1]);
+          positionBuf.push(positions[b][0]);
+          positionBuf.push(positions[b][1]);
+          positionBuf.push(positions[c][0]);
+          positionBuf.push(positions[c][1]);
 
-        texCoordsBuf.push(mesh.vertices[a].src.x);
-        texCoordsBuf.push(mesh.vertices[a].src.y);
-        texCoordsBuf.push(mesh.vertices[b].src.x);
-        texCoordsBuf.push(mesh.vertices[b].src.y);
-        texCoordsBuf.push(mesh.vertices[c].src.x);
-        texCoordsBuf.push(mesh.vertices[c].src.y);
+          texCoordsBuf.push(mesh.vertices[a].src.x);
+          texCoordsBuf.push(mesh.vertices[a].src.y);
+          texCoordsBuf.push(mesh.vertices[b].src.x);
+          texCoordsBuf.push(mesh.vertices[b].src.y);
+          texCoordsBuf.push(mesh.vertices[c].src.x);
+          texCoordsBuf.push(mesh.vertices[c].src.y);
+        }
       }
 
       const texture = this.directives.has(`highlight:${mesh.id}`) ?
