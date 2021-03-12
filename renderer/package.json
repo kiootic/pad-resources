@@ -1,0 +1,14 @@
+{
+  "name": "renderer",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "dependencies": {
+    "gl": "4.9.0",
+    "minimist": "1.2.5",
+    "sharp": "0.27.2"
+  },
+  "scripts": {
+    "postinstall": "curl https://raw.githubusercontent.com/EsotericSoftware/spine-runtimes/3.8/spine-ts/build/spine-webgl.js > spine-webgl.js; echo '\nmodule.exports.spine = spine; '>> spine-webgl.js"
+  }
+}
