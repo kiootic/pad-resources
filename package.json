@@ -22,7 +22,7 @@
     "inspect": "ts-node . inspect"
   },
   "dependencies": {
-    "axios": "0.21.0",
+    "axios": "0.21.1",
     "glob": "^7.1.6",
     "lodash": "4.17.20",
     "minimist": "1.2.5",
