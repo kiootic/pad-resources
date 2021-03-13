@@ -119,7 +119,7 @@ export const TEX = {
     const size = 0x10 +
       sum(tex.entries.map((entry) => entry.data.length + 0x20)) +
       (tex.info ? 0x10 : 0);
-    const buf = new Buffer(size);
+    const buf = Buffer.alloc(size);
     let offset = 0;
 
     buf.writeUInt32LE(0x32584554, offset + 0);
