@@ -24,7 +24,7 @@
   "dependencies": {
     "axios": "0.21.1",
     "glob": "7.1.6",
-    "lodash": "4.17.20",
+    "lodash": "4.17.21",
     "minimist": "1.2.5",
     "mkdirp": "1.0.4",
     "rimraf": "3.0.2",
