@@ -1,7 +1,7 @@
-import { ISA, ISAFrameAngle, ISAFrameAttachment, ISAFrameColor, ISAFramePoints, ISAFrameVertex, ISAInterpolationKind, ISAKeyFrame } from "./isa";
+import { ISA, ISAFrame, ISAFrameAngle, ISAFrameAttachment, ISAFrameColor, ISAFramePoints, ISAFrameVertex, ISAInterpolationBezier, ISAInterpolationKind, ISAKeyFrame } from "./isa";
 import { ISC, ISCMesh } from "./isc";
 import { SpineAtlas } from "./spine-atlas";
-import { SkeletonAnimation, SkeletonAnimationBoneTimelines, SkeletonAnimationSkinDeforms, SkeletonAnimationSlotTimelines, SkeletonAttachment, SkeletonBone, SkeletonSkin, SkeletonSlot, SpineSkeleton } from "./spine-skeleton";
+import { BeizerCurve, Curve1, Curve2, Curve4, SkeletonAnimation, SkeletonAnimationBoneTimelines, SkeletonAnimationKeyframeCurve1, SkeletonAnimationKeyframeCurve2, SkeletonAnimationKeyframeCurve4, SkeletonAnimationSkinDeforms, SkeletonAnimationSlotTimelines, SkeletonAttachment, SkeletonBone, SkeletonSkin, SkeletonSlot, SpineSkeleton } from "./spine-skeleton";
 
 function rgba(color: number): string {
     return (((color >> 24) & 0xff) + (color & 0xffffff) * 256).toString(16).padStart(8, "0");
@@ -108,27 +108,71 @@ export function loadISC(isc: ISC, skeleton: SpineSkeleton, atlas: SpineAtlas) {
     }
 }
 
-function keyframe(f: ISAKeyFrame) {
-    interface Keyframe {
-        time: number;
-        curve?: "stepped" | number;
-        c2?: number;
-        c3?: number;
-        c4?: number;
-    }
-    const kf: Keyframe = { time: f.time };
+function beizer(b: ISAInterpolationBezier, x1: number, x2: number, y1: any, y2: any): BeizerCurve {
+    return [
+        x1 + b.x1 * (x2 - x1),
+        y1 + b.y1 * (y2 - y1),
+        x1 + b.x2 * (x2 - x1),
+        y1 + b.y2 * (y2 - y1),
+    ];
+}
+
+type ValueFn<T> = (f: T | undefined) => number | undefined;
+
+type KeyFrame<T extends ISAFrame> = ISAKeyFrame & { frame: T };
+
+function mapFrames<T extends ISAFrame>(fs: ISAKeyFrame[]): <V>(fn: (fs: KeyFrame<T>[]) => V) => V {
+    return (fn) => fn(fs as KeyFrame<T>[]);
+}
+
+function keyframeCurve1<T extends ISAFrame>(fs: KeyFrame<T>[], i: number, v: ValueFn<T>): SkeletonAnimationKeyframeCurve1 {
+    const f = fs[i], n = fs[i + 1];
+    let curve: Curve1 | undefined;
     switch (f.interpolation.kind) {
         case ISAInterpolationKind.Constant:
-            kf.curve = "stepped";
+            curve = "stepped";
             break;
         case ISAInterpolationKind.Bezier:
-            kf.curve = f.interpolation.x1;
-            kf.c2 = f.interpolation.y1;
-            kf.c3 = f.interpolation.x2;
-            kf.c4 = f.interpolation.y2;
+            curve = beizer(f.interpolation, f?.time ?? 0, n.time, v(f?.frame) ?? 0, v(n?.frame) ?? 1)
             break;
     }
-    return kf;
+    return { time: f.time, curve };
+}
+
+function keyframeCurve2<T extends ISAFrame>(fs: KeyFrame<T>[], i: number, v1: ValueFn<T>, v2: ValueFn<T>): SkeletonAnimationKeyframeCurve2 {
+    const f = fs[i], n = fs[i + 1];
+    let curve: Curve2 | undefined;
+    switch (f.interpolation.kind) {
+        case ISAInterpolationKind.Constant:
+            curve = "stepped";
+            break;
+        case ISAInterpolationKind.Bezier:
+            curve = [
+                ...beizer(f.interpolation, f?.time ?? 0, n.time, v1(f?.frame) ?? 0, v1(n?.frame) ?? 1),
+                ...beizer(f.interpolation, f?.time ?? 0, n.time, v2(f?.frame) ?? 0, v2(n?.frame) ?? 1),
+            ];
+            break;
+    }
+    return { time: f.time, curve };
+}
+
+function keyframeCurve4<T extends ISAFrame>(fs: KeyFrame<T>[], i: number, v1: ValueFn<T>, v2: ValueFn<T>, v3: ValueFn<T>, v4: ValueFn<T>): SkeletonAnimationKeyframeCurve4 {
+    const f = fs[i], n = fs[i + 1];
+    let curve: Curve4 | undefined;
+    switch (f.interpolation.kind) {
+        case ISAInterpolationKind.Constant:
+            curve = "stepped";
+            break;
+        case ISAInterpolationKind.Bezier:
+            curve = [
+                ...beizer(f.interpolation, f?.time ?? 0, n.time, v1(f?.frame) ?? 0, v1(n?.frame) ?? 1),
+                ...beizer(f.interpolation, f?.time ?? 0, n.time, v2(f?.frame) ?? 0, v2(n?.frame) ?? 1),
+                ...beizer(f.interpolation, f?.time ?? 0, n.time, v3(f?.frame) ?? 0, v3(n?.frame) ?? 1),
+                ...beizer(f.interpolation, f?.time ?? 0, n.time, v4(f?.frame) ?? 0, v4(n?.frame) ?? 1),
+            ];
+            break;
+    }
+    return { time: f.time, curve };
 }
 
 export function loadISA(name: string, isc: ISC, isa: ISA, skeleton: SpineSkeleton) {
@@ -142,24 +186,27 @@ export function loadISA(name: string, isc: ISC, isa: ISA, skeleton: SpineSkeleto
     for (const bone of isa.bones) {
         const timelines: SkeletonAnimationBoneTimelines = {};
         if (bone.rotation) {
-            timelines.rotate = bone.rotation.frames.map(f => ({
-                ...keyframe(f),
-                angle: (f.frame as ISAFrameAngle).angle,
-            }));
+            timelines.rotate = mapFrames<ISAFrameAngle>(bone.rotation.frames)
+                (fs => fs.map((f, i) => ({
+                    ...keyframeCurve1(fs, i, f => f?.angle),
+                    value: f.frame.angle,
+                })));
         }
         if (bone.scaling) {
-            timelines.scale = bone.scaling.frames.map(f => ({
-                ...keyframe(f),
-                x: (f.frame as ISAFrameVertex).vertex.x,
-                y: (f.frame as ISAFrameVertex).vertex.y,
-            }));
+            timelines.scale = mapFrames<ISAFrameVertex>(bone.scaling.frames)
+                (fs => fs.map((f, i) => ({
+                    ...keyframeCurve2(fs, i, f => f?.vertex.x, f => f?.vertex.y),
+                    x: f.frame.vertex.x,
+                    y: f.frame.vertex.y,
+                })));
         }
         if (bone.translation) {
-            timelines.translate = bone.translation.frames.map(f => ({
-                ...keyframe(f),
-                x: (f.frame as ISAFrameVertex).vertex.x,
-                y: (f.frame as ISAFrameVertex).vertex.y,
-            }));
+            timelines.translate = mapFrames<ISAFrameVertex>(bone.translation.frames)
+                (fs => fs.map((f, i) => ({
+                    ...keyframeCurve2(fs, i, f => f?.vertex.x, f => f?.vertex.y),
+                    x: f.frame.vertex.x,
+                    y: f.frame.vertex.y,
+                })));
         }
 
         if (timelines.rotate || timelines.scale || timelines.translate) {
@@ -170,30 +217,35 @@ export function loadISA(name: string, isc: ISC, isa: ISA, skeleton: SpineSkeleto
     for (const slot of isa.slots) {
         const timelines: SkeletonAnimationSlotTimelines = {};
         if (slot.attachment) {
-            timelines.attachment = slot.attachment.frames.map(f => {
-                const frame = f.frame as ISAFrameAttachment;
-                let name: string | null = null;
-                if (frame.name.length > 0) {
-                    name = frame.name;
-                    if (skeleton.__attachments[name]) {
-                        skeleton.skins[0].attachments[slot.name][name] = skeleton.__attachments[name];
-                        delete skeleton.__attachments[name];
+            timelines.attachment = mapFrames<ISAFrameAttachment>(slot.attachment.frames)
+                (fs => fs.map((f, i) => {
+                    let name: string | null = null;
+                    if (f.frame.name.length > 0) {
+                        name = f.frame.name;
+                        if (skeleton.__attachments[name]) {
+                            skeleton.skins[0].attachments[slot.name][name] = skeleton.__attachments[name];
+                            delete skeleton.__attachments[name];
+                        }
                     }
-                }
-                return {
-                    ...keyframe(f),
-                    name,
-                };
-            });
+                    return {
+                        ...keyframeCurve1(fs, i, () => undefined),
+                        name,
+                    };
+                }));
         }
         if (slot.tint) {
-            timelines.color = slot.tint.frames.map(f => ({
-                ...keyframe(f),
-                color: rgba((f.frame as ISAFrameColor).color),
-            }));
+            timelines.rgba = mapFrames<ISAFrameColor>(slot.tint.frames)
+                (fs => fs.map((f, i) => ({
+                    ...keyframeCurve4(fs, i,
+                        f => ((f?.color ?? 0 >> 24) & 0xff) / 0xff,
+                        f => ((f?.color ?? 0 >> 16) & 0xff) / 0xff,
+                        f => ((f?.color ?? 0 >> 8) & 0xff) / 0xff,
+                        f => ((f?.color ?? 0 >> 0) & 0xff) / 0xff),
+                    color: rgba(f.frame.color),
+                })));
         }
 
-        if (timelines.attachment || timelines.color) {
+        if (timelines.attachment || timelines.rgba) {
             anim.slots[slot.name] = timelines;
         }
     }
@@ -209,11 +261,11 @@ export function loadISA(name: string, isc: ISC, isa: ISA, skeleton: SpineSkeleto
             if (!s[slot.skinName]) {
                 s[slot.skinName] = {};
             }
-            s[slot.skinName][mesh.name] = mesh.deformation.frames.map(f => ({
-                ...keyframe(f),
+            s[slot.skinName][mesh.name] = mapFrames<ISAFramePoints>(mesh.deformation.frames)(fs => fs.map((f, i) => ({
+                ...keyframeCurve1(fs, i, () => undefined),
                 offset: 0,
                 vertices: ([] as number[]).concat(...(f.frame as ISAFramePoints).points.map(v => [v.x, v.y]))
-            }));
+            })));
         }
     }
 }

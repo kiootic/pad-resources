@@ -30,10 +30,8 @@ export const SpineAtlas = {
             for (const region of image.regions) {
                 lines.push(region.name);
                 lines.push("  rotate: false");
-                lines.push(`  xy: ${region.x}, ${region.y}`);
-                lines.push(`  size: ${region.width}, ${region.height}`);
-                lines.push(`  orig: ${region.width}, ${region.height}`);
-                lines.push("  offset: 0, 0");
+                lines.push(`  bounds: ${region.x}, ${region.y}, ${region.width}, ${region.height}`);
+                lines.push(`  offsets: 0, 0, ${region.width}, ${region.height}`);
                 lines.push("  index: -1");
             }
             lines.push("");

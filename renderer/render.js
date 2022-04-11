@@ -31,7 +31,8 @@ async function main(args) {
 
   global.HTMLCanvasElement = class { };
   global.EventTarget = class { };
-  spine.webgl.PolygonBatcher = class extends spine.webgl.PolygonBatcher {
+  global.WebGLRenderingContext = gl.constructor;
+  spine.PolygonBatcher = class extends spine.PolygonBatcher {
     begin(shader) {
       super.begin(shader);
       this.__setAdditive();
@@ -54,18 +55,18 @@ async function main(args) {
       }
     }
   };
-  spine.webgl.Shader.newColoredTextured = (context) => {
+  spine.Shader.newColoredTextured = (context) => {
     const vs = `
-        attribute vec4 ${spine.webgl.Shader.POSITION};
-        attribute vec4 ${spine.webgl.Shader.COLOR};
-        attribute vec2 ${spine.webgl.Shader.TEXCOORDS};
-        uniform mat4 ${spine.webgl.Shader.MVP_MATRIX};
+        attribute vec4 ${spine.Shader.POSITION};
+        attribute vec4 ${spine.Shader.COLOR};
+        attribute vec2 ${spine.Shader.TEXCOORDS};
+        uniform mat4 ${spine.Shader.MVP_MATRIX};
         varying vec4 v_color;
         varying vec2 v_texCoords;
         void main () {
-          v_color = ${spine.webgl.Shader.COLOR};
-          v_texCoords = ${spine.webgl.Shader.TEXCOORDS};
-          gl_Position = ${spine.webgl.Shader.MVP_MATRIX} * ${spine.webgl.Shader.POSITION};
+          v_color = ${spine.Shader.COLOR};
+          v_texCoords = ${spine.Shader.TEXCOORDS};
+          gl_Position = ${spine.Shader.MVP_MATRIX} * ${spine.Shader.POSITION};
         }
     `;
 
@@ -87,27 +88,19 @@ async function main(args) {
       }
     `;
 
-    return new spine.webgl.Shader(context, vs, fs);
+    return new spine.Shader(context, vs, fs);
   };
 
-  const images = {};
-  const loadTasks = [];
-  let atlas = new spine.TextureAtlas(atlasText, imagePath => {
-    const img = { width: 0, height: 0, data: null };
-    images[imagePath] = img;
-    loadTasks.push((async () => {
-      const image = sharp(path.join(dataDir, imagePath));
-      const { width, height } = await image.metadata();
-      const data = await image.raw().toBuffer();
-      img.width = width;
-      img.height = height;
-      img.data = data;
-    })());
-    return new spine.FakeTexture(img);
-  });
-  await Promise.all(loadTasks);
-  atlas = new spine.TextureAtlas(atlasText, imagePath => {
-    return new spine.webgl.GLTexture(gl, images[imagePath]);
+  const atlas = new spine.TextureAtlas(atlasText);
+  const images = new Map();
+  for (const page of atlas.pages) {
+    const image = sharp(path.join(dataDir, page.name));
+    const { width, height } = await image.metadata();
+    const data = await image.raw().toBuffer();
+    images.set(page.name, { width, height, data });
+  }
+  atlas.setTextures({
+    get: (name) => new spine.GLTexture(gl, images.get(name))
   });
 
   let background;
@@ -115,7 +108,7 @@ async function main(args) {
     const bgImage = sharp(path.join(__dirname, "background.png"));
     const { width, height } = await bgImage.metadata();
     const data = await bgImage.raw().toBuffer();
-    background = new spine.webgl.GLTexture(gl, { width, height, data });
+    background = new spine.GLTexture(gl, { width, height, data });
   }
 
   const skeletonData = new spine.SkeletonJson(new spine.AtlasAttachmentLoader(atlas)).readSkeletonData(skeletonJson);
@@ -125,7 +118,7 @@ async function main(args) {
   const animationState = new spine.AnimationState(animationStateData);
   animationState.setAnimation(0, 'animation', true);
 
-  const renderer = new spine.webgl.SceneRenderer(canvas, gl, false);
+  const renderer = new spine.SceneRenderer(canvas, gl, false);
 
   renderer.camera.position.x = 0;
   renderer.camera.position.y = 640 / 6;

@@ -1,38 +1,40 @@
 <html>
+  <head>
+    <script src="https://cdn.jsdelivr.net/npm/@esotericsoftware/spine-player@4.0.27/dist/iife/spine-player.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@esotericsoftware/spine-player@4.0.27/dist/spine-player.css"
+    />
+  </head>
 
-<head>
-    <script src="http://esotericsoftware.com/files/spine-player/3.8/spine-player.js"></script>
-    <link rel="stylesheet" href="http://esotericsoftware.com/files/spine-player/3.8/spine-player.css">
-</head>
-
-<body>
-    <div id="player-container" style="width: 640px; height: 640px;"></div>
+  <body>
+    <div id="player-container" style="width: 640px; height: 640px"></div>
     <script>
-        const baseDir = new URL("../data/HT/out", window.location);
-        const n = new URLSearchParams(window.location.search).get("n") ?? "mons_3274";
-        window.player = new spine.SpinePlayer("player-container", {
-            jsonUrl: `${baseDir}/${n}.json`,
-            atlasUrl: `${baseDir}/${n}.atlas`,
-            premultipliedAlpha: false,
-            backgroundImage: {
-                url: "background.png",
-                x: -320,
-                y: -(640 * 1 / 3),
-                width: 640,
-                height: 640
-            },
-            viewport: {
-                x: -320,
-                y: -(640 * 1 / 3),
-                width: 640,
-                height: 640,
-                padLeft: 0,
-                padRight: 0,
-                padTop: 0,
-                padBottom: 0,
-            }
-        });
+      const baseDir = new URL("../data/HT/out", window.location);
+      const n =
+        new URLSearchParams(window.location.search).get("n") ?? "mons_3274";
+      window.player = new spine.SpinePlayer("player-container", {
+        jsonUrl: `${baseDir}/${n}.json`,
+        atlasUrl: `${baseDir}/${n}.atlas`,
+        premultipliedAlpha: false,
+        backgroundImage: {
+          url: new URL("./renderer/background.png", window.location),
+          x: -320,
+          y: -((640 * 1) / 3),
+          width: 640,
+          height: 640,
+        },
+        viewport: {
+          x: -320,
+          y: -((640 * 1) / 3),
+          width: 640,
+          height: 640,
+          padLeft: 0,
+          padRight: 0,
+          padTop: 0,
+          padBottom: 0,
+        },
+      });
     </script>
-</body>
-
+  </body>
 </html>

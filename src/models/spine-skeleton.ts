@@ -84,42 +84,45 @@ export interface SkeletonAnimation {
     deform: SkeletonAnimationDeforms;
 }
 
+export type BeizerCurve = [number, number, number, number];
+
+export type Curve1 = "stepped" | BeizerCurve;
+export interface SkeletonAnimationKeyframeCurve1 {
+    time: number;
+    curve?: Curve1;
+}
+
+export type Curve2 = "stepped" | [...BeizerCurve, ...BeizerCurve];
+export interface SkeletonAnimationKeyframeCurve2 {
+    time: number;
+    curve?: Curve2;
+}
+
+export type Curve4 = "stepped" | [...BeizerCurve, ...BeizerCurve, ...BeizerCurve, ...BeizerCurve];
+export interface SkeletonAnimationKeyframeCurve4 {
+    time: number;
+    curve?: Curve4;
+}
+
 export interface SkeletonAnimationBones {
     [name: string]: SkeletonAnimationBoneTimelines;
 }
 
-export type SkeletonAnimationBoneTimelineType = "rotate" | "translate" | "scale" | "shear";
 export type SkeletonAnimationBoneTimelines = {
-    [type in SkeletonAnimationBoneTimelineType]?: SkeletonAnimationBoneKeyframe[];
-}
-export interface SkeletonAnimationBoneKeyframe {
-    time: number;
-    curve?: "stepped" | number;
-    c2?: number;
-    c3?: number;
-    c4?: number;
-    angle?: number;
-    x?: number;
-    y?: number;
+    rotate?: Array<SkeletonAnimationKeyframeCurve1 & { value: number }>;
+    translate?: Array<SkeletonAnimationKeyframeCurve2 & { x: number, y: number }>;
+    scale?: Array<SkeletonAnimationKeyframeCurve2 & { x: number, y: number }>;
+    shear?: Array<SkeletonAnimationKeyframeCurve2 & { x: number, y: number }>;
 }
 
 export interface SkeletonAnimationSlots {
     [name: string]: SkeletonAnimationSlotTimelines;
 }
 
-export type SkeletonAnimationSlotTimelineType = "attachment" | "color";
 export type SkeletonAnimationSlotTimelines = {
-    [type in SkeletonAnimationSlotTimelineType]?: SkeletonAnimationSlotKeyframe[];
-}
-export interface SkeletonAnimationSlotKeyframe {
-    time: number;
-    curve?: "stepped" | number;
-    c2?: number;
-    c3?: number;
-    c4?: number;
-    name?: string | null;
-    color?: string;
-}
+    attachment?: Array<SkeletonAnimationKeyframeCurve1 & { name: string | null }>;
+    rgba?: Array<SkeletonAnimationKeyframeCurve4 & { color: string }>;
+};
 
 export interface SkeletonAnimationDeforms {
     [skinName: string]: SkeletonAnimationSkinDeforms;
@@ -135,8 +138,5 @@ export interface SkeletonAnimationMeshDeformKeyframe {
     time: number;
     offset: number;
     vertices: number[];
-    curve?: "stepped" | number;
-    c2?: number;
-    c3?: number;
-    c4?: number;
+    curve?: "stepped" | [number, number, number, number];
 }
