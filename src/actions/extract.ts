@@ -76,6 +76,7 @@ async function convertSpineModel(isc: ISC, isas: ISA[], images: Map<string, Buff
     bones: [],
     slots: [],
     skins: [],
+    ik: [],
     animations: {},
     __attachments: {},
   };

@@ -22,6 +22,7 @@ export function loadISC(isc: ISC, skeleton: SpineSkeleton, atlas: SpineAtlas) {
         skeleton.bones.push({
             name: bone.name,
             parent: bone.parentId >= 0 ? bones.get(bone.parentId)!.name : undefined,
+            length: bone.length,
             x: bone.transform.tx,
             y: bone.transform.ty,
             rotation: bone.transform.angle,
@@ -51,6 +52,21 @@ export function loadISC(isc: ISC, skeleton: SpineSkeleton, atlas: SpineAtlas) {
             color: rgba(slot.tint),
             blend,
         });
+    }
+
+    for (const ik of isc.ikConstraints) {
+        const bone1 = bones.get(ik.boneId1)!.name;
+        const bone2 = bones.get(ik.boneId2)!.name;
+        const target = bones.get(ik.targetBoneId)!.name;
+        skeleton.ik.push({
+            name: target,
+            bones: [bone1, bone2],
+            target,
+            order: ik.order,
+            mix: ik.mix,
+            softness: ik.softness,
+            bendPositive: ik.bendPositive
+        })
     }
 
     const s: SkeletonSkin = {

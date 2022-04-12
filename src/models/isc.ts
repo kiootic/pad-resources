@@ -10,14 +10,15 @@ export interface ISC {
   forms: ISCForm[];
   skins: ISCSkin[];
   meshs: ISCMesh[];
+  ikConstraints: ISCIKConstraint[];
 }
 
 export interface ISCBone {
   id: number;
   parentId: number;
   name: string;
+  length: number;
   transform: Transform;
-
   transformMode: number;
 }
 
@@ -75,6 +76,16 @@ export enum ISCMeshType {
   MESH = 'MESH',
 }
 
+export interface ISCIKConstraint {
+  order: number;
+  boneId1: number;
+  boneId2: number;
+  targetBoneId: number;
+  mix: number;
+  bendPositive: boolean;
+  softness: number;
+}
+
 export const ISC = {
   match(buf: Buffer): boolean {
     return buf.length >= 4 && buf.readUInt32LE(0) === 0x32435349;
@@ -93,6 +104,8 @@ export const ISC = {
     const offsetSkins = buf.readUInt32LE(24 + 3 * 8 + 4);
     const numMeshs = buf.readUInt32LE(24 + 4 * 8 + 0);
     const offsetMeshs = buf.readUInt32LE(24 + 4 * 8 + 4);
+    const numIKs = buf.readUInt32LE(24 + 5 * 8 + 0);
+    const offsetIKs = buf.readUInt32LE(24 + 5 * 8 + 4);
 
     const bones: ISCBone[] = [];
     for (let i = 0; i < numBones; i++) {
@@ -112,6 +125,7 @@ export const ISC = {
           ty: buf.readFloatLE(offsetBones + i * 0x40 + 28),
         },
         transformMode: buf.readUInt32LE(offsetBones + i * 0x40 + 40),
+        length: buf.readFloatLE(offsetBones + i * 0x40 + 44),
       });
     }
 
@@ -214,6 +228,23 @@ export const ISC = {
       });
     }
 
-    return { version, name, bones, slots, forms, skins, meshs };
+    const ikConstraints: ISCIKConstraint[] = [];
+    for (let i = 0; i < numIKs; i++) {
+      const type = buf.readInt32LE(offsetIKs + i * 0x20 + 0);
+      if (type !== 0x54534349)
+        throw new Error(`unknown ik type: ${type}`);
+
+      ikConstraints.push({
+        order: buf.readUInt32LE(offsetIKs + i * 0x20 + 4),
+        boneId1: buf.readUInt32LE(offsetIKs + i * 0x20 + 8),
+        boneId2: buf.readUInt32LE(offsetIKs + i * 0x20 + 12),
+        targetBoneId: buf.readUInt32LE(offsetIKs + i * 0x20 + 16),
+        mix: buf.readFloatLE(offsetIKs + i * 0x20 + 20),
+        bendPositive: buf.readUInt32LE(offsetIKs + i * 0x20 + 24) !== 0,
+        softness: buf.readFloatLE(offsetIKs + i * 0x20 + 28),
+      });
+    }
+
+    return { version, name, bones, slots, forms, skins, meshs, ikConstraints };
   },
 };

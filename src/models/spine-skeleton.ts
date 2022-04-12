@@ -7,6 +7,7 @@ export interface SpineSkeleton {
     bones: SkeletonBone[];
     slots: SkeletonSlot[];
     skins: SkeletonSkin[];
+    ik: SkeletonIK[];
     animations: SkeletonAnimations;
     __attachments: Record<string, SkeletonAttachment>;
 }
@@ -21,6 +22,7 @@ export interface SkeletonMeta {
 export interface SkeletonBone {
     name: string;
     parent?: string;
+    length: number;
     x: number;
     y: number;
     rotation: number;
@@ -72,6 +74,16 @@ export interface SkeletonAttachmentMesh extends SkeletonAttachmentBase {
     uvs: number[];
     triangles: number[];
     vertices: number[];
+}
+
+export interface SkeletonIK {
+    name: string;
+    order: number;
+    bones: string[];
+    target: string;
+    mix: number;
+    softness: number;
+    bendPositive: boolean;
 }
 
 export interface SkeletonAnimations {
