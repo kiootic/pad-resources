@@ -123,6 +123,8 @@ export const ISC = {
           sy: buf.readFloatLE(offsetBones + i * 0x40 + 20),
           tx: buf.readFloatLE(offsetBones + i * 0x40 + 24),
           ty: buf.readFloatLE(offsetBones + i * 0x40 + 28),
+          shearx: buf.readFloatLE(offsetBones + i * 0x40 + 32),
+          sheary: buf.readFloatLE(offsetBones + i * 0x40 + 36),
         },
         transformMode: buf.readUInt32LE(offsetBones + i * 0x40 + 40),
         length: buf.readFloatLE(offsetBones + i * 0x40 + 44),

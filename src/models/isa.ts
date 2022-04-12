@@ -17,6 +17,7 @@ export interface ISABone {
   rotation: ISAAnimation | null;
   scaling: ISAAnimation | null;
   translation: ISAAnimation | null;
+  shear: ISAAnimation | null;
 }
 
 export interface ISASlot {
@@ -250,6 +251,7 @@ export const ISA = {
         rotation: readAnimation(buf, buf.readUInt32LE(offsetBones + i * 0x30 + 4)),
         scaling: readAnimation(buf, buf.readUInt32LE(offsetBones + i * 0x30 + 8)),
         translation: readAnimation(buf, buf.readUInt32LE(offsetBones + i * 0x30 + 12)),
+        shear: readAnimation(buf, buf.readUInt32LE(offsetBones + i * 0x30 + 20)),
       });
     }
 

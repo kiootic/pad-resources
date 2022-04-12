@@ -28,8 +28,8 @@ export function loadISC(isc: ISC, skeleton: SpineSkeleton, atlas: SpineAtlas) {
             rotation: bone.transform.angle,
             scaleX: bone.transform.sx,
             scaleY: bone.transform.sy,
-            shearX: 0,
-            shearY: 0,
+            shearX: bone.transform.shearx,
+            shearY: bone.transform.sheary,
             transform,
         });
     }
@@ -218,6 +218,14 @@ export function loadISA(name: string, isc: ISC, isa: ISA, skeleton: SpineSkeleto
         }
         if (bone.translation) {
             timelines.translate = mapFrames<ISAFrameVertex>(bone.translation.frames)
+                (fs => fs.map((f, i) => ({
+                    ...keyframeCurve2(fs, i, f => f?.vertex.x, f => f?.vertex.y),
+                    x: f.frame.vertex.x,
+                    y: f.frame.vertex.y,
+                })));
+        }
+        if (bone.shear) {
+            timelines.shear = mapFrames<ISAFrameVertex>(bone.shear.frames)
                 (fs => fs.map((f, i) => ({
                     ...keyframeCurve2(fs, i, f => f?.vertex.x, f => f?.vertex.y),
                     x: f.frame.vertex.x,
