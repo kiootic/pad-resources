@@ -1,4 +1,4 @@
-import { ISA, ISAFrame, ISAFrameAngle, ISAFrameAttachment, ISAFrameColor, ISAFramePoints, ISAFrameVertex, ISAInterpolationBezier, ISAInterpolationKind, ISAKeyFrame } from "./isa";
+import { ISA, ISAFrame, ISAFrameAngle, ISAFrameAttachment, ISAFrameColor, ISAFrameDrawOrder, ISAFramePoints, ISAFrameVertex, ISAInterpolationBezier, ISAInterpolationKind, ISAKeyFrame } from "./isa";
 import { ISC, ISCMesh } from "./isc";
 import { SpineAtlas } from "./spine-atlas";
 import { BeizerCurve, Curve1, Curve2, Curve4, SkeletonAnimation, SkeletonAnimationBoneTimelines, SkeletonAnimationKeyframeCurve1, SkeletonAnimationKeyframeCurve2, SkeletonAnimationKeyframeCurve4, SkeletonAnimationSkinDeforms, SkeletonAnimationSlotTimelines, SkeletonAttachment, SkeletonBone, SkeletonSkin, SkeletonSlot, SpineSkeleton } from "./spine-skeleton";
@@ -291,5 +291,14 @@ export function loadISA(name: string, isc: ISC, isa: ISA, skeleton: SpineSkeleto
                 vertices: ([] as number[]).concat(...(f.frame as ISAFramePoints).points.map(v => [v.x, v.y]))
             })));
         }
+    }
+
+    if (isa.drawOrder) {
+        anim.drawOrder = isa.drawOrder.frames.map(f => ({
+            time: f.time,
+            offsets: (f.frame as ISAFrameDrawOrder).offsets
+                .map((offset, id) => ({ slot: isc.slots[id].skinName, offset }))
+                .filter((f) => f.offset !== 0)
+        }));
     }
 }

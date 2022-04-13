@@ -94,6 +94,7 @@ export interface SkeletonAnimation {
     bones: SkeletonAnimationBones;
     slots: SkeletonAnimationSlots;
     deform: SkeletonAnimationDeforms;
+    drawOrder?: SkeletonAnimationDrawOrderKeyframe[];
 }
 
 export type BeizerCurve = [number, number, number, number];
@@ -151,4 +152,9 @@ export interface SkeletonAnimationMeshDeformKeyframe {
     offset: number;
     vertices: number[];
     curve?: "stepped" | [number, number, number, number];
+}
+
+export interface SkeletonAnimationDrawOrderKeyframe {
+    time: number;
+    offsets: Array<{ slot: string, offset: number }>;
 }
