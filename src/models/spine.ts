@@ -4,7 +4,11 @@ import { SpineAtlas } from "./spine-atlas";
 import { BeizerCurve, Curve1, Curve2, Curve4, SkeletonAnimation, SkeletonAnimationBoneTimelines, SkeletonAnimationKeyframeCurve1, SkeletonAnimationKeyframeCurve2, SkeletonAnimationKeyframeCurve4, SkeletonAnimationSkinDeforms, SkeletonAnimationSlotTimelines, SkeletonAttachment, SkeletonBone, SkeletonSkin, SkeletonSlot, SpineSkeleton } from "./spine-skeleton";
 
 function rgba(color: number): string {
-    return (((color >> 24) & 0xff) + (color & 0xffffff) * 256).toString(16).padStart(8, "0");
+    const a = (color >> 24) & 0xff;
+    const b = (color >> 16) & 0xff;
+    const g = (color >> 8) & 0xff;
+    const r = (color >> 0) & 0xff;
+    return [r, g, b, a].map(c => c.toString(16).padStart(2, "0")).join('');
 }
 
 export function loadISC(isc: ISC, skeleton: SpineSkeleton, atlas: SpineAtlas) {
@@ -261,10 +265,10 @@ export function loadISA(name: string, isc: ISC, isa: ISA, skeleton: SpineSkeleto
             timelines.rgba = mapFrames<ISAFrameColor>(slot.tint.frames)
                 (fs => fs.map((f, i) => ({
                     ...keyframeCurve4(fs, i,
-                        f => ((f?.color ?? 0 >> 24) & 0xff) / 0xff,
-                        f => ((f?.color ?? 0 >> 16) & 0xff) / 0xff,
-                        f => ((f?.color ?? 0 >> 8) & 0xff) / 0xff,
-                        f => ((f?.color ?? 0 >> 0) & 0xff) / 0xff),
+                        f => (((f?.color ?? 0) >> 24) & 0xff) / 0xff,
+                        f => (((f?.color ?? 0) >> 16) & 0xff) / 0xff,
+                        f => (((f?.color ?? 0) >> 8) & 0xff) / 0xff,
+                        f => (((f?.color ?? 0) >> 0) & 0xff) / 0xff),
                     color: rgba(f.frame.color),
                 })));
         }
