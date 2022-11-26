@@ -1,5 +1,5 @@
 import { ISA, ISAFrame, ISAFrameAngle, ISAFrameAttachment, ISAFrameColor, ISAFrameDrawOrder, ISAFramePoints, ISAFrameVertex, ISAInterpolationBezier, ISAInterpolationKind, ISAKeyFrame } from "./isa";
-import { ISC, ISCMesh } from "./isc";
+import { ISC1, ISCMesh } from "./isc";
 import { SpineAtlas } from "./spine-atlas";
 import { BeizerCurve, Curve1, Curve2, Curve4, SkeletonAnimation, SkeletonAnimationBoneTimelines, SkeletonAnimationKeyframeCurve1, SkeletonAnimationKeyframeCurve2, SkeletonAnimationKeyframeCurve4, SkeletonAnimationSkinDeforms, SkeletonAnimationSlotTimelines, SkeletonAttachment, SkeletonBone, SkeletonSkin, SkeletonSlot, SpineSkeleton } from "./spine-skeleton";
 
@@ -11,7 +11,7 @@ function rgba(color: number): string {
     return [r, g, b, a].map(c => c.toString(16).padStart(2, "0")).join('');
 }
 
-export function loadISC(isc: ISC, skeleton: SpineSkeleton, atlas: SpineAtlas) {
+export function loadISC(isc: ISC1, skeleton: SpineSkeleton, atlas: SpineAtlas) {
     const bones = new Map(isc.bones.map(b => [b.id, b]));
     for (const bone of isc.bones) {
         let transform: SkeletonBone["transform"];
@@ -195,7 +195,7 @@ function keyframeCurve4<T extends ISAFrame>(fs: KeyFrame<T>[], i: number, v1: Va
     return { time: f.time, curve };
 }
 
-export function loadISA(name: string, isc: ISC, isa: ISA, skeleton: SpineSkeleton) {
+export function loadISA(name: string, isc: ISC1, isa: ISA, skeleton: SpineSkeleton) {
     const anim: SkeletonAnimation = {
         bones: {},
         slots: {},
