@@ -4,7 +4,7 @@ P&D card image renderer
 
 Requirement
 -----------
-- Node 8 & Yarn
+- Node 18 & Yarn
 
 Usage
 -----
