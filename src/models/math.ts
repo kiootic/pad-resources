@@ -9,6 +9,8 @@ export interface Transform {
   sy: number;
   tx: number;
   ty: number;
+  shearx: number;
+  sheary: number;
 }
 
 export const Transform = {
@@ -17,6 +19,7 @@ export const Transform = {
       angle: 0,
       sx: 1, sy: 1,
       tx: 0, ty: 0,
+      shearx: 0, sheary: 0,
     };
   },
 };

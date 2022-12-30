@@ -1,0 +1,32 @@
+<html>
+  <head>
+    <script src="https://cdn.jsdelivr.net/npm/@esotericsoftware/spine-player@4.1.8/dist/iife/spine-player.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@esotericsoftware/spine-player@4.1.8/dist/spine-player.css"
+    />
+  </head>
+  <body>
+    <div id="player-container" style="width: 640px; height: 640px"></div>
+    <script>
+      const baseDir = new URL("./data/HT/out", window.location);
+      const mid = new URLSearchParams(window.location.search).get("monster_id") ?? "4428";
+      window.player = new spine.SpinePlayer("player-container", {
+        jsonUrl: `${baseDir}/mons_${mid}.json`,
+        atlasUrl: `${baseDir}/mons_${mid}.atlas`,
+        premultipliedAlpha: false,
+        backgroundImage: {
+          url: new URL("./renderer/background.png", window.location),
+          x: -320, y: -(640 / 3), width: 640, height: 640,
+        },
+        //backgroundColor: "#000000ff",
+        viewport: {
+          x: -320, y: -(640 / 3), width: 640, height: 640,
+          padLeft: 0, padRight: 0, padTop: 0, padBottom: 0,
+        },
+        animation: "animation",
+        showControls: false,
+      });
+    </script>
+  </body>
+</html>

@@ -6,8 +6,8 @@ import { BC } from '../models/bc';
 import { ExtlistEntry } from '../models/extlist';
 import { TEX } from '../models/tex';
 
-function extractETag(etag: string) {
-  return /^(?:W\/)?"([^"]+)"$/.exec(etag)![1];
+function extractETag(etag: string | undefined) {
+  return /^(?:W\/)?"([^"]+)"$/.exec(etag ?? '')![1];
 }
 
 export async function downloadBc(

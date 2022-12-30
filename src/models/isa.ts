@@ -9,6 +9,7 @@ export interface ISA {
   slots: ISASlot[];
   skins: ISASkin[];
   meshs: ISAMesh[];
+  drawOrder: ISAAnimation | null;
 }
 
 export interface ISABone {
@@ -17,6 +18,7 @@ export interface ISABone {
   rotation: ISAAnimation | null;
   scaling: ISAAnimation | null;
   translation: ISAAnimation | null;
+  shear: ISAAnimation | null;
 }
 
 export interface ISASlot {
@@ -53,7 +55,8 @@ export type ISAFrame =
   ISAFrameColor |
   ISAFrameVertex |
   ISAFrameAttachment |
-  ISAFramePoints;
+  ISAFramePoints |
+  ISAFrameDrawOrder;
 
 export enum ISAFrameKind {
   Angle = 'angle',
@@ -61,6 +64,7 @@ export enum ISAFrameKind {
   Vertex = 'vertex',
   Attachment = 'attachment',
   Points = 'points',
+  DrawOrder = 'draw-order',
 }
 
 export interface ISAFrameAngle {
@@ -86,6 +90,11 @@ export interface ISAFrameAttachment {
 export interface ISAFramePoints {
   kind: ISAFrameKind.Points;
   points: Vec2[];
+}
+
+export interface ISAFrameDrawOrder {
+  kind: ISAFrameKind.DrawOrder;
+  offsets: number[];
 }
 
 export type ISAInterpolation =
@@ -116,6 +125,7 @@ const FrameKindMap: Record<string, ISAFrameKind> = {
   V: ISAFrameKind.Vertex,
   T: ISAFrameKind.Attachment,
   P: ISAFrameKind.Points,
+  O: ISAFrameKind.DrawOrder,
 };
 
 const InterpolationKindMap: Record<string, ISAInterpolationKind> = {
@@ -189,6 +199,15 @@ function readAnimation(buf: Buffer, offset: number): ISAAnimation | null {
         };
         pos = pointsPos + ((numPoints + 1) & ~1) * 8;
         break;
+      case ISAFrameKind.DrawOrder:
+        const numOffsets = buf.readUInt32LE(pos + 8);
+        const size = buf.readUInt32LE(pos + 12);
+        frame = {
+          kind: frameKind,
+          offsets: range(numOffsets).map((j) => buf.readInt16LE(pos + 0x10 + j * 2)),
+        };
+        pos += size;
+        break;
       default:
         throw new Error(`unsupported key frame kind: ${fsig[2]}`);
     }
@@ -238,6 +257,8 @@ export const ISA = {
     const numMeshs = buf.readUInt32LE(24 + 3 * 8 + 0);
     const offsetMeshs = buf.readUInt32LE(24 + 3 * 8 + 4);
 
+    const offsetDrawOrder = buf.readUInt32LE(24 + 4 * 8 + 4);
+
     const bones: ISABone[] = [];
     for (let i = 0; i < numBones; i++) {
       const type = buf.readUInt32LE(offsetBones + i * 0x30 + 0);
@@ -250,6 +271,7 @@ export const ISA = {
         rotation: readAnimation(buf, buf.readUInt32LE(offsetBones + i * 0x30 + 4)),
         scaling: readAnimation(buf, buf.readUInt32LE(offsetBones + i * 0x30 + 8)),
         translation: readAnimation(buf, buf.readUInt32LE(offsetBones + i * 0x30 + 12)),
+        shear: readAnimation(buf, buf.readUInt32LE(offsetBones + i * 0x30 + 20)),
       });
     }
 
@@ -292,6 +314,11 @@ export const ISA = {
       });
     }
 
-    return { version, name, bones, slots, skins, meshs };
+    let drawOrder: ISAAnimation | null = null;
+    if (offsetDrawOrder !== 0) {
+      drawOrder = readAnimation(buf, offsetDrawOrder);
+    }
+
+    return { version, name, bones, slots, skins, meshs, drawOrder };
   },
 };
