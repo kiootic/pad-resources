@@ -5,8 +5,6 @@ function usage() {
 usage: pad-resources update
        pad-resources extract <bin files>...
        pad-resources inspect <file>
-       pad-resources render --bin <bin file> --out <out file> [--time <time>] [--video] [--nobg]
-       pad-resources play --bin <bin file>
 `.trim());
   return false;
 }
