@@ -80,4 +80,5 @@ typings/
 .dynamodb/
 
 
-data/
+data/HT/*
+certs.json

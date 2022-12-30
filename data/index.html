@@ -1,0 +1,36 @@
+<html>
+  <head>
+    <script src="https://cdn.jsdelivr.net/npm/@esotericsoftware/spine-player@4.1.8/dist/iife/spine-player.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@esotericsoftware/spine-player@4.1.8/dist/spine-player.css"
+    />
+    <style>
+      .center {
+        position: absolute;
+        left: 50%;
+        margin-right: -50%;
+        transform: translate(-50%, 0);
+      }
+    </style>
+  </head>
+  <body style="background-color:#111;">
+    <div id="player-container" class="center" style="width: 640px; height: 640px"></div>
+    <script>
+      const baseDir = new URL("./HT/out", window.location);
+      const mid = new URLSearchParams(window.location.search).get("m") ?? "4428";
+      window.player = new spine.SpinePlayer("player-container", {
+        jsonUrl: `${baseDir}/mons_${mid}.json`,
+        atlasUrl: `${baseDir}/mons_${mid}.atlas`,
+        premultipliedAlpha: false,
+        backgroundColor: "#000000ff",
+        viewport: {
+          x: -320, y: -(640 / 3), width: 640, height: 640,
+          padLeft: 0, padRight: 0, padTop: 0, padBottom: 0,
+        },
+        animation: "animation",
+        showControls: false,
+      });
+    </script>
+  </body>
+</html>
