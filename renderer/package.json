@@ -4,7 +4,7 @@
   "main": "index.js",
   "license": "MIT",
   "dependencies": {
-    "gl": "4.9.0",
+    "gl": "6.0.2",
     "minimist": "1.2.5",
     "sharp": "0.27.2"
   },
