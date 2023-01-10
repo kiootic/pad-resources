@@ -15,8 +15,8 @@ function writeFile(out: string, name: string, data: Buffer) {
   fs.writeFileSync(join(out, name), data);
 }
 
-async function extract(name: string, buf: Buffer, out: string) {
-  if (TEX.match(buf)) {
+async function extract(name: string, buf: Buffer, out: string, animatedOnly: boolean) {
+  if (TEX.match(buf) && !animatedOnly) {
     const tex = TEX.load(buf);
     for (const entry of tex.entries) {
       console.log(entry.name);
@@ -132,12 +132,12 @@ async function convertSpineModel(
 export async function main(args: string[]) {
   const parsedArgs = minimist(args, {
     string: ['out'],
-    boolean: ['help']
+    boolean: ['help', 'animatedOnly']
   });
   if (parsedArgs._.length === 0 || parsedArgs.help) {
     console.log(
-      "usage: pad-resources extract [--out <output directory>] <bin files>...\n" + 
-      "usage: pad-resources extract [--out <output directory>] <input directory>"
+      "usage: pad-resources extract [--animated-only] [--out <output directory>] <bin files>...\n" + 
+      "usage: pad-resources extract [--animated-only] [--out <output directory>] <input directory>"
     );
     return parsedArgs.help;
   }
@@ -152,7 +152,7 @@ export async function main(args: string[]) {
   }
   for (const file of files) {
     const buf = fs.readFileSync(file);
-    await extract(basename(file, extname(file)), buf, parsedArgs.out ?? ".");
+    await extract(basename(file, extname(file)), buf, parsedArgs.out ?? ".", parsedArgs['animated-only']);
   }
   return true;
 }
