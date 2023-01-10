@@ -3,9 +3,15 @@ const path = require('path');
 const minimist = require('minimist');
 const webgl = require('gl');
 const sharp = require('sharp');
+import { padStart } from 'lodash';
 const { spine } = require('../spine-webgl');
 
-async function render(jsonPath, outDir, renderSingle) {
+function toTsubakiName(oldName) {
+  const mid = oldName.split('_')[1];
+  return padStart(mid.toString(), 5, '0') + '.png';
+}
+
+async function render(jsonPath, outDir, renderSingle, forTsubaki) {
   const dataDir = path.dirname(jsonPath);
   const animName = path.basename(jsonPath, path.extname(jsonPath));
   const skeletonJson = fs.readFileSync(jsonPath).toString();
@@ -105,7 +111,7 @@ async function render(jsonPath, outDir, renderSingle) {
   renderer.camera.position.x = 0;
   renderer.camera.position.y = 150;
 
-  async function render(outFile) {
+  async function renderImg(outFile) {
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     animationState.apply(skeleton);
@@ -122,7 +128,11 @@ async function render(jsonPath, outDir, renderSingle) {
   }
 
   if (renderSingle) {
-    await render(path.join(outDir, `${animName}.png`));
+    if (forTsubaki) {
+      await renderImg(path.join(outDir, toTsubakiName(animName)));
+    } else {
+      await renderImg(path.join(outDir, `${animName}.png`));
+    }
   } else {
     const duration = animationState.getCurrent(0).animation.duration;
     let time = 0;
@@ -130,7 +140,7 @@ async function render(jsonPath, outDir, renderSingle) {
     let i = 0;
     while (time < duration) {
       console.log(`${time.toFixed(2)}/${duration.toFixed(2)}`);
-      await render(path.join(outDir, `${animName}-${i}.png`));
+      await renderImg(path.join(outDir, `${animName}-${i}.png`));
       time += delta;
       i++;
       animationState.update(delta);
@@ -141,11 +151,11 @@ async function render(jsonPath, outDir, renderSingle) {
 
 export async function main(args) {
   const parsedArgs = minimist(args, {
-    boolean: ['single', 'help'],
+    boolean: ['single', 'help', 'for-tsubaki'],
     string: ['out']
   });
   if (parsedArgs._.length !== 1 || parsedArgs.help) {
-    console.log("usage: renderer.js [skeleton JSON] [--single] [--out=<output directory>]");
+    console.log("usage: renderer.js [skeleton JSON] [--single] [--for-tsubaki] [--out=<output directory>]");
     return parsedArgs.help;
   }
 
@@ -161,7 +171,7 @@ export async function main(args) {
   }
 
   for (const file of files) {
-    await render(file, parsedArgs.out ?? '.', parsedArgs.single)
+    await render(file, parsedArgs.out ?? '.', parsedArgs.single, parsedArgs['for-tsubaki'])
   }
 
   return true;
