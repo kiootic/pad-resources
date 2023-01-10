@@ -17,7 +17,7 @@
   <body style="background-color:#111;">
     <div id="player-container" class="center" style="width: 640px; height: 640px"></div>
     <script>
-      const baseDir = new URL("./HT/out", window.location);
+      const baseDir = new URL("./HT/spine", window.location);
       const mid = new URLSearchParams(window.location.search).get("m") ?? "4428";
       window.player = new spine.SpinePlayer("player-container", {
         jsonUrl: `${baseDir}/mons_${mid}.json`,

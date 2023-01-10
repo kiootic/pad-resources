@@ -6,33 +6,24 @@ import { BC } from '../models/bc';
 import { ExtlistEntry } from '../models/extlist';
 import { TEX } from '../models/tex';
 
-function extractETag(etag: string | undefined) {
-  return /^(?:W\/)?"([^"]+)"$/.exec(etag ?? '')![1];
-}
-
 export async function downloadBc(
-  bcPath: string, binPath: string, cachePath: string,
-  extlist: string, entry: ExtlistEntry,
-): Promise<void> {
-  const key = `${entry.isCards ? 'cards' : 'mons'}_${padStart(entry.id.toString(), 3, '0')}`;
+  bcPath: string, binPath: string,
+  extlist: string, entry: ExtlistEntry, redownload: boolean
+): Promise<boolean> {
+  const key = `${entry.isCards ? 'cards' : 'mons'}_${padStart(entry.id.toString(), 4, '0')}`;
 
-  const respHead = await Axios.head(`${key}.bc`, { baseURL: extlist });
-  let etag = extractETag(respHead.headers.etag);
+  if (!redownload && existsSync(join(binPath, `${key}.bin`))) {return false;}
 
   let data: Buffer;
-  if (existsSync(join(cachePath, etag))) {
-    data = await readFileSync(join(cachePath, etag));
-  } else {
-    const resp = await Axios.get(`${key}.bc`, {
+  if (redownload || !existsSync(join(binPath, `${key}.bc`))) {
+    data = (await Axios.get(`${entry.isCards ? 'cards' : 'mons'}_${padStart(entry.id.toString(), 3, '0')}.bc`, {
       baseURL: extlist,
       responseType: 'arraybuffer',
-    });
-    etag = extractETag(resp.headers.etag);
-    data = resp.data;
-    await writeFileSync(join(cachePath, etag), data);
+    })).data;
+    await writeFileSync(join(bcPath, `${key}.bc`), data);
+  } else {
+    data = await readFileSync(join(bcPath, `${key}.bc`));
   }
-
-  await writeFileSync(join(bcPath, `${key}.bc`), data);
 
   const bc = BC.load(data);
   let binData = bc.data;
@@ -51,4 +42,6 @@ export async function downloadBc(
   }
 
   await writeFileSync(join(binPath, `${key}.bin`), binData);
+
+  return true;
 }

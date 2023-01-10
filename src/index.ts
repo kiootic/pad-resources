@@ -3,8 +3,9 @@ import { actionFactories } from './actions';
 function usage() {
   console.log(`
 usage: pad-resources update
-       pad-resources extract <bin files>...
-       pad-resources inspect <file>
+       pad-resources extract --out <out dir> <bin files>...
+       pad-resources render --bin <bin file> --out <out dir> [--single]
+       pad-resources server
 `.trim());
   return false;
 }

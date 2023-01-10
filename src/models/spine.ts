@@ -59,6 +59,9 @@ export function loadISC(isc: ISC1, skeleton: SpineSkeleton, atlas: SpineAtlas) {
     }
 
     for (const ik of isc.ikConstraints) {
+        if (bones.get(ik.boneId1) === undefined || bones.get(ik.boneId2) === undefined) {
+            continue;
+        }
         const bone1 = bones.get(ik.boneId1)!.name;
         const bone2 = bones.get(ik.boneId2)!.name;
         const target = bones.get(ik.targetBoneId)!.name;
@@ -285,6 +288,7 @@ export function loadISA(name: string, isc: ISC1, isa: ISA, skeleton: SpineSkelet
     const skins = new Map(isc.skins.map(s => [s.meshId, s]));
     for (const mesh of isa.meshs) {
         if (mesh.deformation) {
+            if (skins.get(mesh.id) === undefined) {continue;}
             const slot = slots.get(skins.get(mesh.id)!.name)!;
             if (!s[slot.skinName]) {
                 s[slot.skinName] = {};

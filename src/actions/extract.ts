@@ -1,4 +1,4 @@
-import { readFileSync, writeFileSync } from "fs";
+import fs from "fs";
 import { glob } from "glob";
 import minimist from "minimist";
 import { basename, extname, join } from "path";
@@ -11,15 +11,11 @@ import { SpineAtlas } from "../models/spine-atlas";
 import { SpineSkeleton } from "../models/spine-skeleton";
 import { TEX } from "../models/tex";
 
-function writeFile(out: string | undefined, name: string, data: Buffer) {
-  let path = name;
-  if (out) {
-    path = join(out, path);
-  }
-  writeFileSync(path, data);
+function writeFile(out: string, name: string, data: Buffer) {
+  fs.writeFileSync(join(out, name), data);
 }
 
-async function extract(name: string, buf: Buffer, out: string | undefined) {
+async function extract(name: string, buf: Buffer, out: string) {
   if (TEX.match(buf)) {
     const tex = TEX.load(buf);
     for (const entry of tex.entries) {
@@ -56,7 +52,7 @@ async function convertSpineModel(
   isc: ISC,
   isas: ISA[],
   images: Map<string, Buffer>,
-  out: string | undefined
+  out: string
 ) {
   switch (isc.type) {
     case 1:
@@ -133,27 +129,30 @@ async function convertSpineModel(
   }
 }
 
-interface Args {
-  out: string;
-  _: string[];
-}
-
 export async function main(args: string[]) {
-  const parsedArgs = minimist(args) as Args;
-  if (parsedArgs._.length === 0) {
+  const parsedArgs = minimist(args, {
+    string: ['out'],
+    boolean: ['help']
+  });
+  if (parsedArgs._.length === 0 || parsedArgs.help) {
     console.log(
-      "usage: pad-resources extract [--out <output directory>] <bin files>..."
+      "usage: pad-resources extract [--out <output directory>] <bin files>...\n" + 
+      "usage: pad-resources extract [--out <output directory>] <input directory>"
     );
-    return false;
+    return parsedArgs.help;
   }
 
   const files: string[] = [];
   for (const pattern of parsedArgs._) {
-    files.push(...glob.sync(pattern));
+    if (fs.existsSync(pattern) && fs.lstatSync(pattern).isDirectory()) {
+      files.push(...fs.readdirSync(pattern).map((fp) => join(pattern, fp)));
+    } else {
+      files.push(...glob.sync(pattern));
+    }
   }
   for (const file of files) {
-    const buf = readFileSync(file);
-    await extract(basename(file, extname(file)), buf, parsedArgs.out);
+    const buf = fs.readFileSync(file);
+    await extract(basename(file, extname(file)), buf, parsedArgs.out ?? ".");
   }
   return true;
 }
