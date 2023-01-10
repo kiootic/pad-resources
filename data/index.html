@@ -17,19 +17,39 @@
   <body style="background-color:#111;">
     <div id="player-container" class="center" style="width: 640px; height: 640px"></div>
     <script>
+      function loadFile(filePath) {
+        var result = null;
+        var xmlhttp = new XMLHttpRequest();
+        xmlhttp.open("GET", filePath, false);
+        xmlhttp.send();
+        if (xmlhttp.status==200) {result = xmlhttp.responseText;}
+        return result;
+      }
       const baseDir = new URL("./HT/spine", window.location);
       const mid = new URLSearchParams(window.location.search).get("m") ?? "4428";
-      window.player = new spine.SpinePlayer("player-container", {
-        jsonUrl: `${baseDir}/mons_${mid}.json`,
-        atlasUrl: `${baseDir}/mons_${mid}.atlas`,
-        premultipliedAlpha: false,
-        backgroundColor: "#000000ff",
-        viewport: {
-          x: -320, y: -(640 / 3), width: 640, height: 640,
-          padLeft: 0, padRight: 0, padTop: 0, padBottom: 0,
-        },
-        showControls: false,
-      });
+
+      const file = loadFile(`${baseDir}/mons_${mid}.json`);
+      if (file === null) {
+
+      } else {
+        const animations = JSON.parse(loadFile(`${baseDir}/mons_${mid}.json`)).animations;
+        const animName = (animations.animation !== undefined ? 'animation' : 
+                          animations.animation_01 !== undefined ? 'animation_01' :
+                          Object.keys(animations)[0])
+        console.log(animName);
+        window.player = new spine.SpinePlayer("player-container", {
+          jsonUrl: `${baseDir}/mons_${mid}.json`,
+          atlasUrl: `${baseDir}/mons_${mid}.atlas`,
+          premultipliedAlpha: false,
+          backgroundColor: "#000000ff",
+          viewport: {
+            x: -320, y: -(640 / 3), width: 640, height: 640,
+            padLeft: 0, padRight: 0, padTop: 0, padBottom: 0,
+          },
+          animation: animName,
+          showControls: false,
+        });
+      }
     </script>
   </body>
 </html>
