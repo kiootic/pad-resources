@@ -10,8 +10,8 @@ Usage
 -----
 ```sh
 yarn update  # download image data from server
-yarn extract data/HT/bin/mons_4428.bin --out data/HT/spine
-yarn render data/HT/spine/mons_4428.json data/HT/out
+yarn extract data/HT/bin/mons_4428.bin --out data/HT/spine  # extract spine data from binary file
+yarn render data/HT/spine/mons_4428.json data/HT/out  # render spine data into mp4 and gif formats
 ```
 
 Rendering
