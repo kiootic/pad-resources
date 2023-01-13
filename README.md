@@ -1,4 +1,4 @@
-pad-resources
+pad-visual-media
 =============
 P&D card image renderer
 
@@ -10,7 +10,8 @@ Usage
 -----
 ```sh
 yarn update  # download image data from server
-yarn extract --out data/HT/out data/HT/bin/mons_5203.bin # extract image data from a data file
+yarn extract data/HT/bin/mons_4428.bin --out data/HT/spine
+yarn render data/HT/spine/mons_4428.json data/HT/out
 ```
 
 Rendering
