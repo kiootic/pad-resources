@@ -193,12 +193,11 @@ async function render(jsonPath, outDir, renderSingle, forTsubaki) {
 
 export async function main(args) {
   const parsedArgs = minimist(args, {
-    boolean: ['single', 'help', 'for-tsubaki'],
-    string: ['out']
+    boolean: ['single', 'help', 'for-tsubaki']
   });
-
-  if (parsedArgs._.length !== 1 || parsedArgs.help) {
-    console.log("usage: renderer.js [skeleton JSON] [--single] [--for-tsubaki] [--out=<output directory>]");
+  
+  if (parsedArgs._.length !== 2 || parsedArgs.help) {
+    console.log("usage: renderer.js <skeleton JSON> <output directory> [--single] [--for-tsubaki]");
     return parsedArgs.help;
   }
 
@@ -214,7 +213,7 @@ export async function main(args) {
   }
 
   for (const file of files) {
-    await render(file, parsedArgs.out ?? '.', parsedArgs.single, parsedArgs['for-tsubaki'])
+    await render(file, parsedArgs._[1], parsedArgs.single, parsedArgs['for-tsubaki'])
   }
 
   return true;
