@@ -212,7 +212,10 @@ export async function main(args: string[]) {
   }
 
   // TODO: Add progress bar for files
+  let pbar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
+  if (parsedArgs.single && !parsedArgs['for-tsubaki']) {pbar.start(files.length, 0);}
   for (const file of files) {
+    if (parsedArgs.single && !parsedArgs['for-tsubaki']) {pbar.increment();}
     if (parsedArgs['new-only']) {
       let base = path.basename(file, path.extname(file));
       if (parsedArgs['for-tsubaki']
@@ -222,6 +225,7 @@ export async function main(args: string[]) {
     }
     await render(file, parsedArgs._[1], parsedArgs.single, parsedArgs['for-tsubaki'])
   }
+  if (parsedArgs.single && !parsedArgs['for-tsubaki']) {pbar.stop();}
 
   return true;
 }
