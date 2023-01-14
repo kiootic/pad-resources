@@ -2,10 +2,10 @@ import { actionFactories } from './actions';
 
 function usage() {
   console.log(`
-usage: pad-resources update
-       pad-resources extract --out <out dir> <bin files>...
-       pad-resources render --bin <bin file> --out <out dir> [--single]
-       pad-resources server
+usage: pad-visual-media update <out directory> [--new-only] [--for-tsubaki]
+       pad-visual-media extract <bin file> <output directory> [--animated-only] [--new-only] [--for-tsubaki]
+       pad-visual-media render <skeleton JSON> <output directory> [--single] [--new-only] [--for-tsubaki]
+       pad-visual-media server
 `.trim());
   return false;
 }

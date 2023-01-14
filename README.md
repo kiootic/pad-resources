@@ -1,6 +1,6 @@
 pad-visual-media
 =============
-P&D card image renderer
+PAD card image renderer
 
 Requirement
 -----------
@@ -9,9 +9,9 @@ Requirement
 Usage
 -----
 ```sh
-yarn update  # download image data from server
-yarn extract data/HT/bin/mons_4428.bin --out data/HT/spine  # extract spine data from binary file
-yarn render data/HT/spine/mons_4428.json data/HT/out  # render spine data into mp4 and gif formats
+yarn update data/bin  # download image data from server
+yarn extract data/bin/mons_4428.bin data/spine  # extract spine data from binary file
+yarn render data/spine/mons_4428.json data/vids  # render spine data into mp4 and gif formats
 ```
 
 Rendering

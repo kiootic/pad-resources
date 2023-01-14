@@ -10,13 +10,19 @@ import { loadISA, loadISC } from "../models/spine";
 import { SpineAtlas } from "../models/spine-atlas";
 import { SpineSkeleton } from "../models/spine-skeleton";
 import { TEX } from "../models/tex";
+const cliProgress = require('cli-progress');
 
 function writeFile(out: string, name: string, data: Buffer) {
   fs.writeFileSync(join(out, name), data);
 }
 
-async function extract(name: string, buf: Buffer, out: string, animatedOnly: boolean) {
-  if (TEX.match(buf) && !animatedOnly) {
+async function extract(in_file: string, out: string, newOnly: boolean, animatedOnly: boolean) {
+  const name = basename(in_file, extname(in_file));
+  const buf = fs.readFileSync(in_file);
+
+  if (TEX.match(buf)) {
+    if (animatedOnly) {return;}
+    if (newOnly && fs.existsSync(join(out, `${name}.png`).toUpperCase())) {return;}
     const tex = TEX.load(buf);
     for (const entry of tex.entries) {
       console.log(entry.name);
@@ -25,6 +31,8 @@ async function extract(name: string, buf: Buffer, out: string, animatedOnly: boo
     }
   } else if (BBIN.match(buf)) {
     const bbin = BBIN.load(buf);
+
+    if (newOnly && fs.existsSync(join(out, `${name}.json`))) {return;}
     const images = new Map<string, Buffer>();
     let isc: ISC | null = null;
     const isas: ISA[] = [];
@@ -131,28 +139,31 @@ async function convertSpineModel(
 
 export async function main(args: string[]) {
   const parsedArgs = minimist(args, {
-    string: ['out'],
-    boolean: ['help', 'animatedOnly']
+    boolean: ['help', 'animatedOnly', 'new-only', 'for-tsubaki']
   });
-  if (parsedArgs._.length === 0 || parsedArgs.help) {
-    console.log(
-      "usage: pad-resources extract [--animated-only] [--out <output directory>] <bin files>...\n" + 
-      "usage: pad-resources extract [--animated-only] [--out <output directory>] <input directory>"
-    );
+
+  if (parsedArgs._.length !== 2 || parsedArgs.help) {
+    console.log("usage: pad-visual-media extract <bin file> <output directory> [--animated-only] [--new-only] [--for-tsubaki]");
     return parsedArgs.help;
   }
 
-  const files: string[] = [];
-  for (const pattern of parsedArgs._) {
-    if (fs.existsSync(pattern) && fs.lstatSync(pattern).isDirectory()) {
-      files.push(...fs.readdirSync(pattern).map((fp) => join(pattern, fp)));
-    } else {
-      files.push(...glob.sync(pattern));
+  const files = [];
+  if (fs.existsSync(parsedArgs._[0]) && fs.lstatSync(parsedArgs._[0]).isDirectory()) {
+    for (const file of fs.readdirSync(parsedArgs._[0])) {
+      if (file.endsWith('.bin')) {
+        files.push(join(parsedArgs._[0], file));
+      }
     }
+  } else {
+    files.push(...glob.sync(parsedArgs._[0]));
   }
+
+  let pbar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
+  if (!parsedArgs['for-tsubaki']) {pbar.start(files.length, 0);}
   for (const file of files) {
-    const buf = fs.readFileSync(file);
-    await extract(basename(file, extname(file)), buf, parsedArgs.out ?? ".", parsedArgs['animated-only']);
+    await extract(file, parsedArgs._[1], parsedArgs['new-only'], parsedArgs['animated-only']);
+    if (!parsedArgs['for-tsubaki']) {pbar.increment();}
   }
+  if (!parsedArgs['for-tsubaki']) {pbar.stop();}
   return true;
 }

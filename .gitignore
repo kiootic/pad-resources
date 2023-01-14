@@ -80,6 +80,7 @@ typings/
 .dynamodb/
 
 
-data/HT/*
+data/*
+!data/index.html
 certs.json
 src/spine-webgl.js

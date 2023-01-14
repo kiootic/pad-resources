@@ -4,12 +4,13 @@ const minimist = require('minimist');
 const webgl = require('gl');
 const sharp = require('sharp');
 import { padStart } from 'lodash';
+import { glob } from "glob";
 const { spine } = require('../spine-webgl');
 
 import { spawnSync, spawn } from 'child_process';
 const cliProgress = require('cli-progress');
 
-async function render(jsonPath, outDir, renderSingle, forTsubaki) {
+async function render(jsonPath: string, outDir: string, renderSingle: boolean, forTsubaki: boolean) {
   const dataDir = path.dirname(jsonPath);
   const skeletonJson = fs.readFileSync(jsonPath).toString();
   const atlasText = fs.readFileSync(jsonPath.replace(/\.json$/, '.atlas')).toString();
@@ -25,15 +26,15 @@ async function render(jsonPath, outDir, renderSingle, forTsubaki) {
   }
   gl.canvas = canvas;
 
-  global.HTMLCanvasElement = class { };
-  global.EventTarget = class { };
   global.WebGLRenderingContext = gl.constructor;
   spine.PolygonBatcher = class extends spine.PolygonBatcher {
-    begin(shader) {
+    begin(shader: any) {
+      console.log('shader');
+      console.log(typeof shader);
       super.begin(shader);
       this.__setAdditive();
     }
-    setBlendMode(srcBlend, dstBlend) {
+    setBlendMode(srcBlend: any, dstBlend: any) {
       super.setBlendMode(srcBlend, dstBlend);
       this.__setAdditive();
     }
@@ -48,7 +49,7 @@ async function render(jsonPath, outDir, renderSingle, forTsubaki) {
       }
     }
   };
-  spine.Shader.newColoredTextured = (context) => {
+  spine.Shader.newColoredTextured = (context: any) => {
     const vs = `
         attribute vec4 ${spine.Shader.POSITION};
         attribute vec4 ${spine.Shader.COLOR};
@@ -93,7 +94,7 @@ async function render(jsonPath, outDir, renderSingle, forTsubaki) {
     images.set(page.name, { width, height, data });
   }
   atlas.setTextures({
-    get: (name) => new spine.GLTexture(gl, images.get(name))
+    get: (name: any) => new spine.GLTexture(gl, images.get(name))
   });
 
   const skeletonData = new spine.SkeletonJson(new spine.AtlasAttachmentLoader(atlas)).readSkeletonData(skeletonJson);
@@ -108,7 +109,7 @@ async function render(jsonPath, outDir, renderSingle, forTsubaki) {
   renderer.camera.position.x = 0;
   renderer.camera.position.y = 150;
 
-  function renderImg(outFile) {
+  function renderImg(outFile: string | undefined) {
     gl.clearColor(0, 0, 0, 0);
     gl.clear(gl.COLOR_BUFFER_BIT);
     animationState.apply(skeleton);
@@ -165,7 +166,7 @@ async function render(jsonPath, outDir, renderSingle, forTsubaki) {
     await Promise.all(promises);
     if (!forTsubaki) {pbar.update(Number(duration.toFixed(2))); pbar.stop();}
     
-    console.log("Generating MP4...");
+    console.log("Generating Files...");
     let mp4FFmpegArgs = ['-r', `${FRAME_RATE}`, 
                         '-i', path.join(cacheDir, `${animName}-%0${padding}d.png`), 
                         '-c:v', 'libx264', '-r', `${FRAME_RATE}`, '-pix_fmt', 'yuv420p',
@@ -173,8 +174,6 @@ async function render(jsonPath, outDir, renderSingle, forTsubaki) {
                         path.join(outDir, `${animName}.mp4`)];
     spawnSync('ffmpeg', mp4FFmpegArgs)
     console.log(`${animName}.mp4`);
-    
-    console.log("Generating GIFs...");
     let hqGifFFmpegArgs = ['-i', `${path.join(outDir, `${animName}.mp4`)}`, '-r', '30',
                            '-loglevel', 'error', '-hide_banner', '-y',
                         path.join(outDir, `${animName}_hq.gif`)];    
@@ -182,22 +181,22 @@ async function render(jsonPath, outDir, renderSingle, forTsubaki) {
                         '-loglevel', 'error', '-hide_banner', '-y',
                         path.join(outDir, `${animName}.gif`)];
     
-    Promise.all([
-      spawn('ffmpeg', hqGifFFmpegArgs).on('exit', (code) => console.log(`${animName}_hq.gif`)),
-      spawn('ffmpeg', gifFFmpegArgs).on('exit', (code) => console.log(`${animName}.gif`)),
-      new Promise((res, rej) => fs.rm(cacheDir, { recursive: true, force: true }, (err) => err ? rej(err) : res()))
+    await Promise.all([
+      new Promise<void>((res, rej) => spawn('ffmpeg', hqGifFFmpegArgs).on('exit', (err) => {console.log(`${animName}_hq.gif`); res();})),
+      new Promise<void>((res, rej) => spawn('ffmpeg', gifFFmpegArgs).on('exit', (err) => {console.log(`${animName}.gif`); res();})),
+      new Promise<void>((res, rej) => fs.rm(cacheDir, { recursive: true, force: true }, () => res()))
     ]);    
   }
 }
 
 
-export async function main(args) {
+export async function main(args: string[]) {
   const parsedArgs = minimist(args, {
     boolean: ['single', 'help', 'for-tsubaki']
   });
   
   if (parsedArgs._.length !== 2 || parsedArgs.help) {
-    console.log("usage: renderer.js <skeleton JSON> <output directory> [--single] [--for-tsubaki]");
+    console.log("usage: pad-visual-media render <skeleton JSON> <output directory> [--single] [--new-only] [--for-tsubaki]");
     return parsedArgs.help;
   }
 
@@ -209,10 +208,18 @@ export async function main(args) {
       }
     }
   } else {
-    files.push(parsedArgs._[0]);
+    files.push(...glob.sync(parsedArgs._[0]));
   }
 
+  // TODO: Add progress bar for files
   for (const file of files) {
+    if (parsedArgs['new-only']) {
+      let base = path.basename(file, path.extname(file));
+      if (parsedArgs['for-tsubaki']
+       && fs.existsSync(path.join(parsedArgs._[1], `${padStart(base.split('_')[1].toString(), 5, '0')}_hq.gif`))) {continue;}
+      else if (!parsedArgs['for-tsubaki']
+       && fs.existsSync(path.join(parsedArgs._[1], `${base}_hq.gif`))) {continue;}
+    }
     await render(file, parsedArgs._[1], parsedArgs.single, parsedArgs['for-tsubaki'])
   }
 
