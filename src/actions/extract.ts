@@ -25,7 +25,6 @@ async function extract(in_file: string, out: string, newOnly: boolean, animatedO
     if (newOnly && fs.existsSync(join(out, `${name}.png`).toUpperCase())) {return;}
     const tex = TEX.load(buf);
     for (const entry of tex.entries) {
-      console.log(entry.name);
       const image = await TEX.decode(entry);
       writeFile(out, entry.name, image);
     }
@@ -105,33 +104,27 @@ async function convertSpineModel(
       }
 
       for (const [name, data] of images) {
-        console.log(name);
         writeFile(out, name, data);
       }
-      console.log(`${name}.json`);
       writeFile(
         out,
         `${name}.json`,
         Buffer.from(JSON.stringify(skeleton, null, 2))
       );
-      console.log(`${name}.atlas`);
       writeFile(out, `${name}.atlas`, SpineAtlas.export(atlas));
       break;
 
     case 2:
       for (const [imageName, data] of images) {
         const fileName = imageName.toLowerCase();
-        console.log(fileName);
         writeFile(out, fileName, data);
       }
 
-      console.log(`${name}.json`);
       writeFile(
         out,
         `${name}.json`,
         Buffer.from(JSON.stringify(isc.json, null, 2))
       );
-      console.log(`${name}.atlas`);
       writeFile(out, `${name}.atlas`, Buffer.from(isc.atlas));
       break;
   }
