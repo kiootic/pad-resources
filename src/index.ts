@@ -4,7 +4,7 @@ function usage() {
   console.log(`
 usage: pad-visual-media update <out directory> [--new-only] [--for-tsubaki]
        pad-visual-media extract <bin file> <output directory> [--animated-only] [--new-only] [--for-tsubaki]
-       pad-visual-media render <skeleton JSON> <output directory> [--single] [--new-only] [--for-tsubaki]
+       pad-visual-media render <skeleton JSON> [--animated-dir <animated output directory>] [--still-dir <still output directory>] [--new-only] [--for-tsubaki <AWS animated path>]
        pad-visual-media server
 `.trim());
   return false;

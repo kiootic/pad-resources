@@ -10,7 +10,9 @@ const { spine } = require('../spine-webgl');
 import { spawnSync, spawn } from 'child_process';
 const cliProgress = require('cli-progress');
 
-async function render(jsonPath: string, outDir: string, renderSingle: boolean, forTsubaki: boolean) {
+async function render(jsonPath: string, outDir: string | undefined, singleDirectory: string | undefined, awsPath: string | undefined) {
+  const forTsubaki = !!awsPath;
+
   const dataDir = path.dirname(jsonPath);
   const skeletonJson = fs.readFileSync(jsonPath).toString();
   const atlasText = fs.readFileSync(jsonPath.replace(/\.json$/, '.atlas')).toString();
@@ -29,8 +31,6 @@ async function render(jsonPath: string, outDir: string, renderSingle: boolean, f
   global.WebGLRenderingContext = gl.constructor;
   spine.PolygonBatcher = class extends spine.PolygonBatcher {
     begin(shader: any) {
-      console.log('shader');
-      console.log(typeof shader);
       super.begin(shader);
       this.__setAdditive();
     }
@@ -128,13 +128,14 @@ async function render(jsonPath: string, outDir: string, renderSingle: boolean, f
     }
   }
 
+  let base = path.basename(jsonPath, path.extname(jsonPath));
+  let animName = base;
+  if (forTsubaki) {animName = padStart(base.replace(/^mons_0*/, ""), 5, '0');}
 
-  let animName = path.basename(jsonPath, path.extname(jsonPath));
-  if (forTsubaki) {animName = animName.replace(/^mons_0*/, "");}
-
-  if (renderSingle) {
-    await renderImg(path.join(outDir, `${animName}.png`));
-  } else {
+  if (singleDirectory !== undefined) {
+    await renderImg(path.join(singleDirectory, `${animName}.png`));
+  } 
+  if (outDir !== undefined) {
     const duration = animationState.getCurrent(0).animation.duration;
     const padding = Math.ceil(duration * FRAME_RATE).toString().length;
     let time = 0;
@@ -170,7 +171,7 @@ async function render(jsonPath: string, outDir: string, renderSingle: boolean, f
                         '-c:v', 'libx264', '-r', `${FRAME_RATE}`, '-pix_fmt', 'yuv420p',
                         '-loglevel', 'error', '-hide_banner', '-y',
                         path.join(outDir, `${animName}.mp4`)];
-    spawnSync('ffmpeg', mp4FFmpegArgs)
+    spawnSync('ffmpeg', mp4FFmpegArgs);
     console.log(`${animName}.mp4`);
     let hqGifFFmpegArgs = ['-i', `${path.join(outDir, `${animName}.mp4`)}`, '-r', '30',
                            '-loglevel', 'error', '-hide_banner', '-y',
@@ -179,22 +180,32 @@ async function render(jsonPath: string, outDir: string, renderSingle: boolean, f
                         '-loglevel', 'error', '-hide_banner', '-y',
                         path.join(outDir, `${animName}.gif`)];
     
+    
     await Promise.all([
       new Promise<void>((res, rej) => spawn('ffmpeg', hqGifFFmpegArgs).on('exit', (err) => {console.log(`${animName}_hq.gif`); res();})),
       new Promise<void>((res, rej) => spawn('ffmpeg', gifFFmpegArgs).on('exit', (err) => {console.log(`${animName}.gif`); res();})),
       new Promise<void>((res, rej) => fs.rm(cacheDir, { recursive: true, force: true }, () => res()))
-    ]);    
+    ]);
+    
+    if (awsPath !== undefined) {
+      const s3Args = ['s3', 'mv', '--acl=private', outDir, awsPath, '--recursive', 
+                      '--exclude', '*', '--include', `${animName}.mp4`,
+                      '--include', `${animName}.gif`, '--include', `${animName}_hq.gif`];
+      await spawn('aws', s3Args);
+      await fs.closeSync(fs.openSync(path.join(outDir, `${base}.tomb`), 'w'));
+    }
   }
 }
 
 
 export async function main(args: string[]) {
   const parsedArgs = minimist(args, {
-    boolean: ['single', 'help', 'for-tsubaki']
+    boolean: ['help'],
+    string: ['still-dir', 'animated-dir', 'for-tsubaki']
   });
   
-  if (parsedArgs._.length !== 2 || parsedArgs.help) {
-    console.log("usage: pad-visual-media render <skeleton JSON> <output directory> [--single] [--new-only] [--for-tsubaki]");
+  if (parsedArgs._.length !== 1 || parsedArgs.help) {
+    console.log("usage: pad-visual-media render <skeleton JSON> [--animated-dir <animated output directory>] [--still-dir <still output directory>] [--new-only] [--for-tsubaki <AWS animated path>]");
     return parsedArgs.help;
   }
 
@@ -209,21 +220,20 @@ export async function main(args: string[]) {
     files.push(...glob.sync(parsedArgs._[0]));
   }
 
+  if (files.length == 0) {console.log("No files specified."); return false;}
+
   // TODO: Add progress bar for files
   let pbar = new cliProgress.SingleBar({}, cliProgress.Presets.shades_classic);
-  if (parsedArgs.single && !parsedArgs['for-tsubaki']) {pbar.start(files.length, 0);}
+  if (!parsedArgs['for-tsubaki']) {pbar.start(files.length, 0);}
   for (const file of files) {
-    if (parsedArgs.single && !parsedArgs['for-tsubaki']) {pbar.increment();}
+    if (!parsedArgs['for-tsubaki']) {pbar.increment();}
     if (parsedArgs['new-only']) {
       let base = path.basename(file, path.extname(file));
-      if (parsedArgs['for-tsubaki']
-       && fs.existsSync(path.join(parsedArgs._[1], `${base.replace(/^mons_0*/, "")}_hq.gif`))) {continue;}
-      else if (!parsedArgs['for-tsubaki']
-       && fs.existsSync(path.join(parsedArgs._[1], `${base}_hq.gif`))) {continue;}
+      if (fs.existsSync(path.join(parsedArgs['animated-dir'] ?? '-', `${base}.tomb`))) {continue;}
     }
-    await render(file, parsedArgs._[1], parsedArgs.single, parsedArgs['for-tsubaki'])
+    await render(file, parsedArgs['animated-dir'], parsedArgs['still-dir'], parsedArgs['for-tsubaki'])
   }
-  if (parsedArgs.single && !parsedArgs['for-tsubaki']) {pbar.stop();}
+  if (!parsedArgs['for-tsubaki']) {pbar.stop();}
 
   return true;
 }
