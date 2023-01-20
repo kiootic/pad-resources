@@ -14,7 +14,7 @@ app.use(parser.urlencoded({extended: true}));
 
 process.env["NODE_TLS_REJECT_UNAUTHORIZED"] = 0;
 
-app.use(express.static('data'));
+app.use(express.static('public_html'));
 
 // Start Server
 http.createServer(app).listen(8002, () => console.log(`HTTP listening at port 8002`));

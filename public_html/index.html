@@ -25,7 +25,8 @@
         if (xmlhttp.status==200) {result = xmlhttp.responseText;}
         return result;
       }
-      const baseDir = new URL("./HT/spine", window.location);
+
+      const baseDir = new URL("https://d30r6ivozz8w2a.cloudfront.net/media/spine", window.location);
       const mid = new URLSearchParams(window.location.search).get("m") ?? "4428";
 
       const file = loadFile(`${baseDir}/mons_${mid}.json`);

@@ -39,7 +39,7 @@ export async function main(args: string[]) {
     return parsedArgs.help;
   }
   
-  await update(parsedArgs._[0], !parsedArgs['new-only'], !parsedArgs['for-tsubaki']);
+  await update(parsedArgs._[0], parsedArgs['new-only'], !parsedArgs['for-tsubaki']);
 
   return true;
 }
