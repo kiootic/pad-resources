@@ -1,0 +1,9 @@
+{
+  "host": "localhost",
+  "user": "botuser",
+  "password": "tsubaki",
+  "charset": "utf8",
+  "db": "dadguide",
+  "database": "dadguide",
+  "awsPath": "s3://tsubakibotpad/media/animated_portraits/"
+}
