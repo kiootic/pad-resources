@@ -4,7 +4,7 @@ PAD card image renderer. This used to be a fork of [kiootic/pad-resources](https
 
 Requirements
 -----------
-- Node 8 & Yarn
+- Node 18 & Yarn
 
 Usage
 -----
