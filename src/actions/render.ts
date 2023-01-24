@@ -200,11 +200,9 @@ async function render(jsonPath: string, outDir: string | undefined, singleDirect
         fs.statSync(path.join(outDir, `${animName}_hq.gif`)).size
       ];
       const fmt = [parseInt(animName)].concat(sizes, sizes);
-      con.connect(function(err: string) {
-        if (err) console.log(err);
-        con.query(mysql.format(QUERY, fmt), function (err: string) {if (err) console.log(err);});
-        con.end();
-      });
+      con.connect();
+      con.query(mysql.format(QUERY, fmt), function (err: string) {if (err) console.log(err);});
+      con.end();
 
       const s3Args = ['s3', 'mv', '--acl=private', outDir, config.awsPath, '--recursive', 
                       '--exclude', '*', '--include', `${animName}.mp4`,
