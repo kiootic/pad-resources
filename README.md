@@ -1,8 +1,8 @@
 pad-visual-media
 =============
-PAD card image renderer
+PAD card image renderer. This used to be a fork of [kiootic/pad-resources](https://github.com/kiootic/pad-resources), we unforked so that we could have issues & codesearch available.
 
-Requirement
+Requirements
 -----------
 - Node 8 & Yarn
 
@@ -25,3 +25,7 @@ You can start up a webserver via `yarn server` which starts at port 8002.
 License
 -------
 MIT
+
+Acknowledgements
+-------
+Many, MANY thanks to kiootic, the author of the original pad-resources library
