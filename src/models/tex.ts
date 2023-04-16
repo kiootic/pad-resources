@@ -27,6 +27,7 @@ export enum TEXEncoding {
   R4G4B4A4 = 3,
   R5G5B5A1 = 4,
   RAW = 13,
+  AJPEG = 15,
 }
 
 function createDecodeTable(a: number, b: number, g: number, r: number) {
@@ -81,6 +82,9 @@ export const TEX = {
       switch (encoding) {
         case TEXEncoding.RAW:
           length = buf.readUInt32LE(16 + index * 32 + 28);
+          break;
+        case TEXEncoding.AJPEG:
+          length = buf.readUInt32LE(offset + 4) + width * height;
           break;
         case TEXEncoding.R8G8B8A8:
           length = width * height * 4;
@@ -172,6 +176,29 @@ export const TEX = {
   async decode(entry: TEXEntry): Promise<Buffer> {
     if (entry.encoding === TEXEncoding.RAW) {
       return entry.data;
+    } else if (entry.encoding === TEXEncoding.AJPEG) {
+      const jpegEnd = entry.data.readUInt32LE(4);
+      const jpegData = entry.data.slice(8, jpegEnd);
+      const alphaData = entry.data.slice(jpegEnd);
+      if (alphaData.length !== entry.width * entry.height) {
+        console.warn(
+          `alpha length mismatch: ${alphaData.length} != ${
+            entry.width * entry.height
+          }`
+        );
+      }
+
+      const jpeg = Sharp(jpegData);
+      jpeg.joinChannel(alphaData, {
+        raw: {
+          width: entry.width,
+          height: entry.height,
+          channels: 1,
+        },
+      });
+      const img = jpeg.png().toBuffer();
+
+      return img;
     } else {
       const pixBuf = Buffer.alloc(entry.width * entry.height * 4);
       if (entry.encoding === TEXEncoding.R8G8B8A8) {
